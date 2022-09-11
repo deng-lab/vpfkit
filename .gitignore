@@ -1,6 +1,5 @@
 *.Rproj
 data
-renv
 test
 *.html
 # History files
