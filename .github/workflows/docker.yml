@@ -26,7 +26,7 @@ jobs:
           #   image: jinlongru/viroprofiler_host
           # - dockerfile: ./container/viroprofiler_replicyc/Dockerfile
           #   image: jinlongru/viroprofiler_replicyc
-          - dockerfile: Dockerfile
+          - dockerfile: ./Dockerfile
             image: jinlongru/viroprofiler-viewer
           # - dockerfile: ./container/protologger/Dockerfile
           #   image: jinlongru/protologger
