@@ -8,6 +8,7 @@ WORKDIR /srv/shiny-server/
 
 # install R packages using renv.lock
 RUN R -e "install.packages('renv')"
+RUN R -e "renv::init()"
 RUN R -e "renv::restore()"
 
 
