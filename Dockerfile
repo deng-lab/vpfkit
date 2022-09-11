@@ -1,6 +1,8 @@
 # shiny app dockerfile
 FROM --platform=linux/amd64 rocker/shiny:4.1.2
 
+USER shiny
+
 # copy the app to the image
 COPY . /srv/shiny-server/
 
@@ -16,5 +18,5 @@ RUN R -e "renv::restore()"
 EXPOSE 3838
 
 # run app
-# CMD ["/usr/bin/shiny-server"]
-CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/', host = '0.0.0.0', port = 3838)"]
+CMD ["/usr/bin/shiny-server"]
+# CMD ["R", "-e", "shiny::runApp('/srv/shiny-server/', host = '0.0.0.0', port = 3838)"]
