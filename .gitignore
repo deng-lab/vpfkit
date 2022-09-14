@@ -1,6 +1,9 @@
 *.Rproj
 data
+tmp
 test
+*.qmd
+*.RData
 *.html
 # History files
 .Rhistory
