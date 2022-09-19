@@ -215,21 +215,6 @@
         "sparseMatrixStats"
       ]
     },
-    "DirichletMultinomial": {
-      "Package": "DirichletMultinomial",
-      "Version": "1.38.0",
-      "Source": "Bioconductor",
-      "git_url": "https://git.bioconductor.org/packages/DirichletMultinomial",
-      "git_branch": "RELEASE_3_15",
-      "git_last_commit": "b4de83d",
-      "git_last_commit_date": "2022-04-26",
-      "Hash": "7a67901746b9e6ae466d7faf0a10dd7d",
-      "Requirements": [
-        "BiocGenerics",
-        "IRanges",
-        "S4Vectors"
-      ]
-    },
     "GenomeInfoDb": {
       "Package": "GenomeInfoDb",
       "Version": "1.32.4",
