@@ -1,5 +1,7 @@
 FROM rocker/shiny:4.1.2
 
+LABEL author="Jinlong Ru"
+
 # copy the app to the image
 COPY . /srv/shiny-server/
 
