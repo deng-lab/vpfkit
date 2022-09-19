@@ -11,7 +11,7 @@ Due to the computation resource limitation of the cloud service, it is
 highly recommened to run ViroProfiler-viewer on your local computer. You
 could use one of following approaches,
 
-### Using Docker image
+### Using Docker image (recommended)
 
 ``` sh
 docker run --rm denglab/viroprofiler-viewer:latest
@@ -20,6 +20,7 @@ docker run --rm denglab/viroprofiler-viewer:latest
 ### Run from GitHub
 
 ``` sh
+# You need to install dependent packages manually
 R -e "shiny::runGitHub('viroprofiler-viewer', 'deng-lab')"
 ```
 
@@ -29,3 +30,7 @@ R -e "shiny::runGitHub('viroprofiler-viewer', 'deng-lab')"
 git clone https://github.com/deng-lab/viroprofiler-viewer
 R -e "shiny::runApp('viroprofiler-viewer')"
 ```
+
+### Online version (not stable)
+
+[https://deng-lab.shinyapps.io/viroprofiler-viewer/](https://deng-lab.shinyapps.io/viroprofiler-viewer/)

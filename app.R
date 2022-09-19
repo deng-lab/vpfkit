@@ -4,13 +4,11 @@ library(shinyWidgets)
 library(tidyverse)
 library(reactable)
 library(plotly)
-library(scales)
 library(shinythemes)
-library(microbiome)
-library(ggpubr)
 library(miaViz)
 library(mia)
 library(scater)
+library(markdown)
 
 Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 100)
 source(here("R/utils.R"))
@@ -65,6 +63,8 @@ sideP <- sidebarPanel(
 mainP <- mainPanel(
   tabsetPanel(
     tabPanel("Data overview",
+             conditionalPanel("output.fileUploaded == false",
+                              fluidRow(column(12, span(textOutput("text1"), style="font-size: 1.2em;color:red;")))),
              fluidRow(column(12, reactableOutput("tbl_rowdata"))),
              fluidRow(column(6, plotlyOutput("plt_checkv_qc")),
                       column(6, plotlyOutput("plt_completeness")),
@@ -112,6 +112,16 @@ server <- function(input, output) {
                                feature_anno$vs2_category %in% input$vs2_category, ]
             }
         }})
+
+    output$fileUploaded <- reactive ({
+        return(!is.null(tse_raw()))
+    })
+
+    outputOptions(output, "fileUploaded", suspendWhenHidden = FALSE)
+
+    output$text1 <- renderText({
+        paste("Please upload a 'viroprofiler_output.RData' file.")
+        })
 
     abdc_metric <- reactive({
         if (input$abdc_metric == "read counts") {
