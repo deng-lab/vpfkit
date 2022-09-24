@@ -1,0 +1,29 @@
+name: DockerHub build and push (macOS)
+
+on:    
+  push:     
+    branches: [ main ]  
+  pull_request:     
+    branches: [ main ] 
+
+
+jobs:
+  build:
+    
+    runs-on: macOS-latest
+    
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3    
+         
+      - name: Setup docker
+        uses: docker-practice/actions-setup-docker@master    
+        run: set -x
+
+      - name: Build and Push Docker Image      
+        uses: mr-smithers-excellent/docker-build-push@v5      
+        with:        
+          image: denglab/viroprofiler-viewer        
+          registry: docker.io        
+          username: ${{ secrets.DOCKER_USER }}        
+          password: ${{ secrets.DOCKER_PASSWORD }}
