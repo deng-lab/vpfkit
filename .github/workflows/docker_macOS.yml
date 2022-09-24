@@ -16,9 +16,9 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v3    
          
-      - name: Setup docker
-        uses: docker-practice/actions-setup-docker@master    
-        run: set -x
+      # name: Setup docker
+      - uses: docker-practice/actions-setup-docker@master    
+      - run: set -x
 
       - name: Build and Push Docker Image      
         uses: mr-smithers-excellent/docker-build-push@v5      
