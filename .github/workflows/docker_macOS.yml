@@ -2,7 +2,7 @@ name: DockerHub build and push (macOS)
 
 on:    
   push:     
-    branches: [ main ]  
+    branches: [ dev_linda ]  
   pull_request:     
     branches: [ main ] 
 
