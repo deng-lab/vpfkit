@@ -1,9 +1,15 @@
 name: DockerHub build and push
 
+# on:
+#   push:
+#     branches:
+#       - "dev_linda"
+
 on:
   push:
-    branches:
-      - "dev_linda"
+    branches: [main]
+  pull_request:
+    branches: [main]
 
 jobs:
   docker:
