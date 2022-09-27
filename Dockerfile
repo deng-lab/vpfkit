@@ -7,8 +7,16 @@ COPY . /srv/shiny-server/
 
 WORKDIR /srv/shiny-server/
 
+RUN apt-get update && apt-get install -y \
+    libcurl4-gnutls-dev \
+    libssl-dev \
+    libgsl-dev \
+    libclang-dev
+
 # install R packages using renv
 RUN R -e "install.packages('renv')"
+# COPY renv.lock renv.lock
+# ENV RENV_PATHS_LIBRARY renv/library
 # RUN R -e "renv::init()"
 # RUN R -e "renv::restore()"
 RUN R -e "renv::install()"
