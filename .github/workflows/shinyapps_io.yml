@@ -19,7 +19,7 @@ jobs:
     timeout-minutes: 90
 
     env:
-      RENV_PATHS_ROOT: ~/.local/share/renv
+      # RENV_PATHS_ROOT: ~/.local/share/renv
       SHINY_ACCOUNT: ${{ secrets.SHINY_ACCOUNT }}
       SHINY_TOKEN: ${{ secrets.SHINY_TOKEN }}
       SHINY_SECRET: ${{ secrets.SHINY_SECRET }}
@@ -38,36 +38,37 @@ jobs:
           # use RStudio's CRAN mirror with precompiled binaries
           use-public-rspm: true
           
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update -y
-          sudo apt-get install -y libcurl4-openssl-dev
-          sudo apt-get install -y libssl-dev
-          sudo apt-get install -y libgsl-dev
-          sudo apt-get install -y libclang-dev
+      # - name: Install system dependencies
+      #   run: |
+      #     sudo apt-get update -y
+      #     sudo apt-get install -y libcurl4-openssl-dev
+      #     sudo apt-get install -y libssl-dev
+      #     sudo apt-get install -y libgsl-dev
+      #     sudo apt-get install -y libclang-dev
           
-      - name: Install remotes and rsconnect
-        run: |
-          install.packages(c("remotes", "rsconnect"))
-          remotes::install_deps(dependencies = TRUE)
-        shell: Rscript {0}
+      # - name: Install remotes and rsconnect
+      #   run: |
+      #     install.packages(c("remotes", "rsconnect"))
+      #     remotes::install_deps(dependencies = TRUE)
+      #   shell: Rscript {0}
     
-      - name: Cache packages
-        uses: actions/cache@v1
-        with:
-          path: ${{ env.RENV_PATHS_ROOT }}
-          key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-renv-
+      # - name: Cache packages
+      #   uses: actions/cache@v1
+      #   with:
+      #     path: ${{ env.RENV_PATHS_ROOT }}
+      #     key: ${{ runner.os }}-renv-${{ hashFiles('**/renv.lock') }}
+      #     restore-keys: |
+      #       ${{ runner.os }}-renv-
       
-      - name: Restore packages
-        shell: Rscript {0}
-        run: |
-          if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-          renv::restore()
+      # - name: Restore packages
+      #   shell: Rscript {0}
+      #   run: |
+      #     if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
+      #     renv::restore()
         
       - name: Deploy to shinyapps.io
         run: |
+          install.packages("rsconnect")
           rsconnect::setAccountInfo(name="${{secrets.SHINY_ACC_NAME}}", token="${{secrets.TOKEN}}", secret="${{secrets.SECRET}}")
           rsconnect::deployApp(appName = 'viroprofiler-viewer')
         shell: Rscript {0}
