@@ -2,14 +2,9 @@ name: deploy shinyapps.io
 
 on:
   push:
-    branches:
-      - "dev_linda"
-
-# on:
-#   push:
-#     branches: [main]
-#   pull_request:
-#     branches: [main]
+    branches: [main]
+  # pull_request:
+  #   branches: [main]
 
 
 jobs:
@@ -45,12 +40,6 @@ jobs:
           sudo apt-get install -y libssl-dev
           sudo apt-get install -y libgsl-dev
           sudo apt-get install -y libclang-dev
-          
-      # - name: Install remotes and rsconnect
-      #   run: |
-      #     install.packages(c("remotes", "rsconnect"))
-      #     remotes::install_deps(dependencies = TRUE)
-      #   shell: Rscript {0}
     
       - name: Cache packages
         uses: actions/cache@v3

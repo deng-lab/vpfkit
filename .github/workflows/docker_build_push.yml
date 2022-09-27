@@ -8,8 +8,8 @@ name: DockerHub build and push
 on:
   push:
     branches: [main]
-  pull_request:
-    branches: [main]
+  # pull_request:
+  #   branches: [main]
 
 jobs:
   docker:
@@ -41,65 +41,3 @@ jobs:
           tags: denglab/viroprofiler-viewer:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max
-
-
-
-      # R env cache
-      # - name: Set RENV_PATHS_ROOT
-      #   shell: bash
-      #   run: |
-      #     echo "RENV_PATHS_ROOT=${{ runner.temp }}/renv" >> $GITHUB_ENV
-      # - name: Install and activate renv
-      #   run: |
-      #     install.packages("renv")
-      #     renv::activate()
-      #   shell: Rscript {0}
-      # - name: Get R and OS version
-      #   id: get-version
-      #   run: |
-      #     cat("##[set-output name=os-version;]", sessionInfo()$running, "\n", sep = "")
-      #     cat("##[set-output name=r-version;]", R.Version()$version.string, sep = "")
-      #   shell: Rscript {0}
-      # - name: Restore Renv package cache
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: ${{ env.RENV_PATHS_ROOT }}
-      #     key: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{ inputs.cache-version }}-${{ hashFiles('renv.lock') }}
-      #     restore-keys: ${{ steps.get-version.outputs.os-version }}-${{ steps.get-version.outputs.r-version }}-${{inputs.cache-version }}-
-      # - name: Restore packages
-      #   shell: Rscript {0}
-      #   run: |
-      #     if (!requireNamespace("renv", quietly = TRUE)) install.packages("renv")
-      #     renv::restore()
-
-
-      #######################################################################################################################################################
-
-
-      # # So now you can use Actions' own caching!
-      # - name: Cache Docker layers
-      #   uses: actions/cache@v3
-      #   with:
-      #     path: /tmp/.buildx-cache
-      #     key: ${{ runner.os }}-buildx-${{ github.sha }}
-      #     restore-keys: |
-      #       ${{ runner.os }}-buildx-
-
-      # # Build and push
-      # - name: Build and push
-      #   uses: docker/build-push-action@v2
-      #   with:
-      #     context: .
-      #     push: true
-      #     tags: denglab/viroprofiler-viewer:latest
-      #     cache-from: type=local,src=/tmp/.buildx-cache
-      #     cache-to: type=local,dest=/tmp/.buildx-cache-new
-      #   # This ugly bit is necessary if you don't want your cache to grow forever
-      #   # until it hits GitHub's limit of 5GB.
-      #   # https://github.com/docker/build-push-action/issues/252
-      #   # https://github.com/moby/buildkit/issues/1896
-
-      # - name: Move cache
-      #   run: |
-      #     rm -rf /tmp/.buildx-cache
-      #     mv /tmp/.buildx-cache-new /tmp/.buildx-cache
