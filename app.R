@@ -36,11 +36,45 @@ plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
 }
 
 
+# ================ JBrowser Module ========================================
+
+library(JBrowseR)
+
+JBrowserUI <- function(id) {
+  tagList(
+    titlePanel("Sars-CoV-2 JBrowseR Example"),
+    # this adds to the browser to the UI, and specifies the output ID in the server
+    JBrowseROutput(NS(id,"browserOutput"))
+  )
+}
+
+JBrowserServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    
+    # create the necessary JB2 assembly configuration
+    assembly <- assembly(
+      "https://jbrowse.org/genomes/sars-cov2/fasta/sars-cov2.fa.gz",
+      bgzip = TRUE
+    )
+    
+    # link the UI with the browser widget
+    output$browserOutput <- renderJBrowseR(
+      JBrowseR(
+        "View",
+        assembly = assembly
+      )
+    )
+  })
+}
+
+
+
+
 # ========= sidebar ==========
 sideP <- sidebarPanel(
   fileInput(inputId = "file1", label = "Upload viroprofiler_output.RData", multiple = FALSE, accept = c(".RData")),
   numericInput("min_ctglen", "Minimum contig length:", value = 10000, step = 1000),
-  selectInput("abdc_metric", "Abundance metric:", choices = c("read counts", "trimmed mean"), selected = "read counts"),
+selectInput("abdc_metric", "Abundance metric:", choices = c("read counts", "trimmed mean"), selected = "read counts"),
   sliderInput("min_covfrac", "Min Coverage Fraction:", min = 0, max = 1, value = 0.5, step = 0.05, ticks = T),
   selectInput("taxa_rank", "Taxonomy rank", choices = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"), selected = "Family"),
   uiOutput("transform_on"),
@@ -87,6 +121,9 @@ mainP <- mainPanel(
              fluidRow(column(6, plotlyOutput("plt_CARD")),
                       column(6, plotlyOutput("plt_VF"))),
              ),
+    # == JBrowser UI from the JBrowser module ==
+    tabPanel("Genome Browser",
+             fluidPage(JBrowserUI("jb")))
   ),
   width = 9
 )
@@ -253,7 +290,11 @@ server <- function(input, output) {
             plotAbundance(tse(), abund_values=abdc_metric(), rank = input$taxa_rank, use_relative=F)
         }
     })
+    
+    # == JBrowser server from the JBrowser module ==
+    JBrowserServer("jb")
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
