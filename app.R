@@ -13,6 +13,7 @@ library(markdown)
 Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 100)
 source(here("R/utils.R"))
 
+
 # Functions
 plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
   if (NMDS == TRUE) {
@@ -39,10 +40,10 @@ plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
 # ================ JBrowser Module ========================================
 
 library(JBrowseR)
+data_server <- serve_data("./JBrowser_data/")
 
 JBrowserUI <- function(id) {
   tagList(
-    titlePanel("Sars-CoV-2 JBrowseR Example"),
     # this adds to the browser to the UI, and specifies the output ID in the server
     JBrowseROutput(NS(id,"browserOutput"))
   )
@@ -50,18 +51,18 @@ JBrowserUI <- function(id) {
 
 JBrowserServer <- function(id) {
   moduleServer(id, function(input, output, session) {
-    
     # create the necessary JB2 assembly configuration
     assembly <- assembly(
-      "https://jbrowse.org/genomes/sars-cov2/fasta/sars-cov2.fa.gz",
+      "http://127.0.0.1:5000/phanotate_nts.fasta.gz",
       bgzip = TRUE
     )
-    
+    theme <- theme("#333", "#ff6200")
     # link the UI with the browser widget
     output$browserOutput <- renderJBrowseR(
       JBrowseR(
         "View",
-        assembly = assembly
+        assembly = assembly,
+        theme = theme
       )
     )
   })
@@ -81,8 +82,8 @@ selectInput("abdc_metric", "Abundance metric:", choices = c("read counts", "trim
   uiOutput("transform_method"),
   uiOutput("ctg_feature_col"),
   fluidRow(column(6, selectInput("checkv_quality", "CheckV quality", choices = c("Complete", "High-quality", "Medium-quality", "Low-quality", "Not-determined"), selected = c("Complete", "High-quality", "Medium-quality", "Low-quality"), multiple = TRUE)),
-           column(2, radioButtons("filter_logic", "Logic", choices = c("AND", "OR"), selected = "AND")),
-           column(4, selectInput("vs2_category", "VirSorter2 category", choices = c(1,2,3,4,5,6), selected = c(1,2,4,5), multiple = TRUE))),
+           column(3, radioButtons("filter_logic", "Logic", choices = c("AND", "OR"), selected = "AND")),
+           column(5, selectInput("vs2_category", "VirSorter2 category", choices = c(1,2,3,4,5,6), selected = c(1,2,4,5), multiple = TRUE))),
   numericInput("abundance_min_threshold", "Minimum abundance to show", value = 0.001, min=0),
   selectInput("narm", "Remove NA in glom:", choices = c(TRUE, FALSE), selected = FALSE),
   span("More information on ViroProfiler is "),
@@ -293,6 +294,7 @@ server <- function(input, output) {
     
     # == JBrowser server from the JBrowser module ==
     JBrowserServer("jb")
+    
 }
 
 
