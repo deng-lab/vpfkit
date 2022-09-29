@@ -56,13 +56,32 @@ JBrowserServer <- function(id) {
       "http://127.0.0.1:5000/phanotate_nts.fasta.gz",
       bgzip = TRUE
     )
+    # create configuration for a JB2 GFF Feature Track
+    annotations_track <- track_feature(
+      # "https://jbrowse.org/genomes/sars-cov2/sars-cov2-annotations.sorted.gff.gz",
+      "http://127.0.0.1:5000/trnascan_out.gff.gz",
+      assembly
+    )
+    annotations_track2 <- track_feature(
+      # "https://jbrowse.org/genomes/sars-cov2/sars-cov2-annotations.sorted.gff.gz",
+      "http://127.0.0.1:5000/vpf.genbank.sorted.gff.gz",
+      assembly
+    )
+    # create the tracks array to pass to browser
+    tracks <- tracks(annotations_track, annotations_track2)
     theme <- theme("#333", "#ff6200")
+    default_session <- default_session(
+      assembly,
+      annotations_track2
+    )
     # link the UI with the browser widget
     output$browserOutput <- renderJBrowseR(
       JBrowseR(
         "View",
         assembly = assembly,
+        tracks = tracks,
         theme = theme
+        # defaultSession = default_session
       )
     )
   })
@@ -123,15 +142,17 @@ mainP <- mainPanel(
                       column(6, plotlyOutput("plt_VF"))),
              ),
     # == JBrowser UI from the JBrowser module ==
-    tabPanel("Genome Browser",
-             fluidPage(JBrowserUI("jb")))
+    # tabPanel("Genome Browser",
+    #          fluidPage(JBrowserUI("jb")))
   ),
   width = 9
 )
 
 navp_raw <- tabPanel("Overview", sidebarLayout(sideP, mainP))
 navp_tutorial <- tabPanel("Tutorial", fixedPage(withMathJax(includeMarkdown("www/tutorial.md")), hr(), div(class="footer", includeHTML("www/footer.html"))))
-ui <- navbarPage("ViroProfiler-viewer", navp_raw, navp_tutorial, theme = shinytheme("united"))
+# == JBrowser UI from the JBrowser module ==
+navp_JBrowser <- tabPanel("Genome Browser", fluidPage(JBrowserUI("jb")))
+ui <- navbarPage("ViroProfiler-viewer", navp_raw, navp_JBrowser, navp_tutorial, theme = shinytheme("united"))
 
 # load("viroprofiler_output.RData")
 # ========= server =================
