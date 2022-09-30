@@ -53,7 +53,7 @@ JBrowserServer <- function(id) {
   moduleServer(id, function(input, output, session) {
     # create the necessary JB2 assembly configuration
     assembly <- assembly(
-      "http://127.0.0.1:5000/phanotate_nts.fasta.gz",
+      "http://127.0.0.1:5000/genome.fasta.gz",
       bgzip = TRUE
     )
     # create configuration for a JB2 GFF Feature Track
@@ -72,7 +72,7 @@ JBrowserServer <- function(id) {
     theme <- theme("#333", "#ff6200")
     default_session <- default_session(
       assembly,
-      annotations_track2
+      tracks(annotations_track2)
     )
     # link the UI with the browser widget
     output$browserOutput <- renderJBrowseR(
@@ -80,10 +80,13 @@ JBrowserServer <- function(id) {
         "View",
         assembly = assembly,
         tracks = tracks,
-        theme = theme
-        # defaultSession = default_session
+        theme = theme,
+        defaultSession = default_session
       )
     )
+    session$onSessionEnded(function() {
+      data_server$stop_server()
+    })
   })
 }
 
