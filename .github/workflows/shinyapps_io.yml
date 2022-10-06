@@ -3,9 +3,9 @@ name: deploy shinyapps.io
 on:
   push:
     branches: [main]
+
   # pull_request:
   #   branches: [main]
-
 
 jobs:
   shinyapps:

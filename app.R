@@ -13,6 +13,7 @@ library(markdown)
 Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 100)
 source(here("R/utils.R"))
 
+
 # Functions
 plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
   if (NMDS == TRUE) {
@@ -36,19 +37,75 @@ plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
 }
 
 
+# ================ JBrowser Module ========================================
+
+library(JBrowseR)
+data_server <- serve_data("./JBrowser_data/")
+
+JBrowserUI <- function(id) {
+  tagList(
+    # this adds to the browser to the UI, and specifies the output ID in the server
+    JBrowseROutput(NS(id,"browserOutput"))
+  )
+}
+
+JBrowserServer <- function(id) {
+  moduleServer(id, function(input, output, session) {
+    # create the necessary JB2 assembly configuration
+    assembly <- assembly(
+      "http://127.0.0.1:5000/genome.fasta.gz",
+      bgzip = TRUE
+    )
+    # create configuration for a JB2 GFF Feature Track
+    annotations_track <- track_feature(
+      # "https://jbrowse.org/genomes/sars-cov2/sars-cov2-annotations.sorted.gff.gz",
+      "http://127.0.0.1:5000/trnascan_out.gff.gz",
+      assembly
+    )
+    annotations_track2 <- track_feature(
+      # "https://jbrowse.org/genomes/sars-cov2/sars-cov2-annotations.sorted.gff.gz",
+      "http://127.0.0.1:5000/vpf.genbank.sorted.gff.gz",
+      assembly
+    )
+    # create the tracks array to pass to browser
+    tracks <- tracks(annotations_track, annotations_track2)
+    theme <- theme("#333", "#ff6200")
+    default_session <- default_session(
+      assembly,
+      tracks(annotations_track2)
+    )
+    # link the UI with the browser widget
+    output$browserOutput <- renderJBrowseR(
+      JBrowseR(
+        "View",
+        assembly = assembly,
+        tracks = tracks,
+        theme = theme,
+        defaultSession = default_session
+      )
+    )
+    session$onSessionEnded(function() {
+      data_server$stop_server()
+    })
+  })
+}
+
+
+
+
 # ========= sidebar ==========
 sideP <- sidebarPanel(
   fileInput(inputId = "file1", label = "Upload viroprofiler_output.RData", multiple = FALSE, accept = c(".RData")),
   numericInput("min_ctglen", "Minimum contig length:", value = 10000, step = 1000),
-  selectInput("abdc_metric", "Abundance metric:", choices = c("read counts", "trimmed mean"), selected = "read counts"),
+selectInput("abdc_metric", "Abundance metric:", choices = c("read counts", "trimmed mean"), selected = "read counts"),
   sliderInput("min_covfrac", "Min Coverage Fraction:", min = 0, max = 1, value = 0.5, step = 0.05, ticks = T),
   selectInput("taxa_rank", "Taxonomy rank", choices = c("Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species"), selected = "Family"),
   uiOutput("transform_on"),
   uiOutput("transform_method"),
   uiOutput("ctg_feature_col"),
   fluidRow(column(6, selectInput("checkv_quality", "CheckV quality", choices = c("Complete", "High-quality", "Medium-quality", "Low-quality", "Not-determined"), selected = c("Complete", "High-quality", "Medium-quality", "Low-quality"), multiple = TRUE)),
-           column(2, radioButtons("filter_logic", "Logic", choices = c("AND", "OR"), selected = "AND")),
-           column(4, selectInput("vs2_category", "VirSorter2 category", choices = c(1,2,3,4,5,6), selected = c(1,2,4,5), multiple = TRUE))),
+           column(3, radioButtons("filter_logic", "Logic", choices = c("AND", "OR"), selected = "AND")),
+           column(5, selectInput("vs2_category", "VirSorter2 category", choices = c(1,2,3,4,5,6), selected = c(1,2,4,5), multiple = TRUE))),
   numericInput("abundance_min_threshold", "Minimum abundance to show", value = 0.001, min=0),
   selectInput("narm", "Remove NA in glom:", choices = c(TRUE, FALSE), selected = FALSE),
   span("More information on ViroProfiler is "),
@@ -87,13 +144,18 @@ mainP <- mainPanel(
              fluidRow(column(6, plotlyOutput("plt_CARD")),
                       column(6, plotlyOutput("plt_VF"))),
              ),
+    # == JBrowser UI from the JBrowser module ==
+    # tabPanel("Genome Browser",
+    #          fluidPage(JBrowserUI("jb")))
   ),
   width = 9
 )
 
 navp_raw <- tabPanel("Overview", sidebarLayout(sideP, mainP))
 navp_tutorial <- tabPanel("Tutorial", fixedPage(withMathJax(includeMarkdown("www/tutorial.md")), hr(), div(class="footer", includeHTML("www/footer.html"))))
-ui <- navbarPage("ViroProfiler-viewer", navp_raw, navp_tutorial, theme = shinytheme("united"))
+# == JBrowser UI from the JBrowser module ==
+navp_JBrowser <- tabPanel("Genome Browser", fluidPage(JBrowserUI("jb")))
+ui <- navbarPage("ViroProfiler-viewer", navp_raw, navp_JBrowser, navp_tutorial, theme = shinytheme("united"))
 
 # load("viroprofiler_output.RData")
 # ========= server =================
@@ -253,7 +315,12 @@ server <- function(input, output) {
             plotAbundance(tse(), abund_values=abdc_metric(), rank = input$taxa_rank, use_relative=F)
         }
     })
+    
+    # == JBrowser server from the JBrowser module ==
+    JBrowserServer("jb")
+    
 }
+
 
 # Run the application 
 shinyApp(ui = ui, server = server)
