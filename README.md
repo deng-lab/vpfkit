@@ -15,6 +15,9 @@ could use one of following approaches,
 
 ``` sh
 docker run --rm denglab/viroprofiler-viewer:latest
+
+# If you want to use JBrowse, you need to mount the JBrowse folder
+# docker run --rm -v /path/to/JBrowse_data:/srv/shiny-server/JBrowser_data denglab/viroprofiler-viewer:latest
 ```
 
 ### Run from GitHub
@@ -31,6 +34,8 @@ git clone https://github.com/deng-lab/viroprofiler-viewer
 R -e "shiny::runApp('viroprofiler-viewer')"
 ```
 
-### Online version (not stable)
+### Online version (not recommended)
 
 [https://deng-lab.shinyapps.io/viroprofiler-viewer/](https://deng-lab.shinyapps.io/viroprofiler-viewer/)
+
+JBrowse is not supported in the online version due to limitation of shinyapps.io. Please use the Docker or local version if you want to use JBrowse.

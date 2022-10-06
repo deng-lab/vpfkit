@@ -6,6 +6,7 @@ on:
       - 'Dockerfile'
     tags:
       - 'v*'
+      - 'docker*'
 
 jobs:
   push_to_registry:

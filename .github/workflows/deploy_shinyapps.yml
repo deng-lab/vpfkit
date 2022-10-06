@@ -3,7 +3,7 @@ name: deploy-shiny
 on:
   push:
     tags:
-      - 'd*'
+      - 'v*'
 
 jobs:
   deploy-shiny:

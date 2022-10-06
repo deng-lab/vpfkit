@@ -2,9 +2,9 @@ name: DockerHub build and push
 
 on:
   push:
-    branches: [main]
-  pull_request:
-    branches: [main]
+    tags:
+      - 'd*'
+      - 'v*'
 
 jobs:
   docker:
