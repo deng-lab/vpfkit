@@ -76,3 +76,25 @@ refind_abundance <- function(tse, raw_abundance_name, covfrac_name, thr=0.5) {
   assay(tse_new, raw_abundance_name) <- df_abundance_new
   return(tse_new)
 }
+
+
+plot_beta_diversity <- function(tse_obj, name, NMDS=FALSE, scale = F, ...) {
+  if (NMDS == TRUE) {
+    tse_obj <- runNMDS(tse_obj, FUN = vegan::vegdist, name = name, ...)
+    xlab <- "Axis 1"
+    ylab <- "Axis 2"
+  } else {
+    tse_obj <- runMDS(tse_obj, FUN = vegan::vegdist, name = name, ...)
+    e <- attr(reducedDim(tse_obj, name), "eig")
+    rel_eig <- 100 * e/sum(e[e>0])
+    xlab <- paste("Axis 1 (", round(rel_eig[[1]], 2), "%)", sep = "")
+    ylab <- paste("Axis 2 (", round(rel_eig[[2]], 2), "%)", sep = "")
+  }
+  p <- plotReducedDim(tse_obj, name, colour_by = "condition") +
+    xlab(xlab) +
+    ylab(ylab) +
+    stat_ellipse(geom = "polygon", alpha=0.1, aes(fill=colour_by), linetype=2) +
+    ggtitle(name) +
+    theme_bw()
+  return(p)
+}
