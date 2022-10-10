@@ -3,33 +3,10 @@
     "Version": "4.2.1",
     "Repositories": [
       {
-        "Name": "BioCsoft",
-        "URL": "https://bioconductor.org/packages/3.15/bioc"
-      },
-      {
-        "Name": "BioCann",
-        "URL": "https://bioconductor.org/packages/3.15/data/annotation"
-      },
-      {
-        "Name": "BioCexp",
-        "URL": "https://bioconductor.org/packages/3.15/data/experiment"
-      },
-      {
-        "Name": "BioCworkflows",
-        "URL": "https://bioconductor.org/packages/3.15/workflows"
-      },
-      {
-        "Name": "BioCbooks",
-        "URL": "https://bioconductor.org/packages/3.15/books"
-      },
-      {
         "Name": "CRAN",
-        "URL": "https://cran.rstudio.com"
+        "URL": "https://cloud.r-project.org"
       }
     ]
-  },
-  "Bioconductor": {
-    "Version": "3.15"
   },
   "Packages": {
     "BH": {
@@ -126,6 +103,17 @@
         "irlba",
         "rsvd"
       ]
+    },
+    "BiocVersion": {
+      "Package": "BiocVersion",
+      "Version": "3.15.2",
+      "Source": "Bioconductor",
+      "git_url": "https://git.bioconductor.org/packages/BiocVersion",
+      "git_branch": "master",
+      "git_last_commit": "818ab03",
+      "git_last_commit_date": "2022-03-29",
+      "Hash": "48e545a2fa24a967de72b1114bfe96ac",
+      "Requirements": []
     },
     "Biostrings": {
       "Package": "Biostrings",
@@ -275,6 +263,27 @@
       "Requirements": [
         "BiocGenerics",
         "S4Vectors"
+      ]
+    },
+    "JBrowseR": {
+      "Package": "JBrowseR",
+      "Version": "0.9.1",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Hash": "23d3f119e64296280ff44500a4d78a5d",
+      "Requirements": [
+        "cli",
+        "dplyr",
+        "htmltools",
+        "htmlwidgets",
+        "httpuv",
+        "ids",
+        "jsonlite",
+        "magrittr",
+        "mime",
+        "reactR",
+        "readr",
+        "stringr"
       ]
     },
     "MASS": {
@@ -738,10 +747,10 @@
     },
     "cli": {
       "Package": "cli",
-      "Version": "3.4.0",
+      "Version": "3.4.1",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "78003c09d258968a4d28107e779edb10",
+      "Hash": "0d297d01734d2bcea40197bd4971a764",
       "Requirements": []
     },
     "clipr": {
@@ -1403,10 +1412,10 @@
     },
     "igraph": {
       "Package": "igraph",
-      "Version": "1.3.4",
+      "Version": "1.3.5",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "40e38ff98f90967805831b6234afd05f",
+      "Hash": "132b06d7060f11ba8b4c7e7f385e9b7a",
       "Requirements": [
         "Matrix",
         "magrittr",
@@ -1961,10 +1970,10 @@
     },
     "renv": {
       "Package": "renv",
-      "Version": "0.15.5",
+      "Version": "0.16.0",
       "Source": "Repository",
       "Repository": "CRAN",
-      "Hash": "6a38294e7d12f5d8e656b08c5bd8ae34",
+      "Hash": "c9e8442ab69bc21c9697ecf856c1e6c7",
       "Requirements": []
     },
     "reprex": {
