@@ -15,6 +15,7 @@ RUN apt-get update && apt-get install -y \
 
 # install R packages using renv
 RUN R -e "install.packages('renv')"
+RUN R -e "install.packages('Matrix', version='1.5-1')"
 # COPY renv.lock renv.lock
 # ENV RENV_PATHS_LIBRARY renv/library
 # RUN R -e "renv::init()"
