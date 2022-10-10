@@ -1,13 +1,9 @@
 name: deploy shinyapps.io
 
-# on:
-#   push:
-#     tags:
-#       - 'v*'
-
 on:
   push:
-    branches: [dev_linda]
+    tags:
+      - 'v*'
 
 jobs:
   shinyapps:

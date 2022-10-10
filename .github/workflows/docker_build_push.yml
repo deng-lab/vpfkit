@@ -1,14 +1,10 @@
 name: DockerHub build and push
 
-# on:
-#   push:
-#     tags:
-#       - 'd*'
-#       - 'v*'
-
 on:
   push:
-    branches: [dev_linda]
+    tags:
+      - 'd*'
+      - 'v*'
 
 jobs:
   docker:
