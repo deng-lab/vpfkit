@@ -1,15 +1,24 @@
-library(shiny)
-library(here)
-library(shinyWidgets)
-library(tidyverse)
-library(reactable)
-library(plotly)
-library(shinythemes)
-library(miaViz)
-library(mia)
-library(scater)
-library(markdown)
-library(JBrowseR)
+library("shiny")
+library("here")
+library("shinyWidgets")
+library("tidyverse")
+library("reactable")
+library("plotly")
+library("shinythemes")
+library("miaViz")
+library("mia")
+library("scater")
+library("markdown")
+library("JBrowseR")
+
+# Load packages
+packages <- c("shiny", "here", "shinyWidgets", "tidyverse", "reactable", "plotly", "shinythemes", "miaViz", "mia", "scater", "markdown", "JBrowseR")
+for (package in packages) {
+  if (!require(package, character.only = TRUE)) {
+    renv::install(package)
+  }
+}
+lapply(packages, library, character.only = TRUE)
 
 
 Sys.setenv("VROOM_CONNECTION_SIZE" = 131072 * 100)
@@ -68,7 +77,7 @@ server <- function(input, output) {
 
 
     sample_meta <- reactive({
-        colData(tse()) %>% 
+        colData(tse()) %>%
             as.data.frame() %>%
             mutate(across(where(is.numeric), round, 4))
     })
@@ -98,7 +107,7 @@ server <- function(input, output) {
       if (is.null(tse_raw())) {
         return(NULL)
       } else {
-        feature_meta() %>% 
+        feature_meta() %>%
           reactable(wrap = F, resizable = T)
       }
     })
@@ -109,7 +118,7 @@ server <- function(input, output) {
             return(NULL)
         } else {
             feature_meta() %>%
-                # dplyr::filter(!checkv_quality %in% c("Not-determined", "Low-quality")) %>% 
+                # dplyr::filter(!checkv_quality %in% c("Not-determined", "Low-quality")) %>%
                 ggplot(aes(x=checkv_contig_length, fill=checkv_quality)) +
                 geom_histogram(alpha=0.8)
         }
@@ -129,7 +138,7 @@ server <- function(input, output) {
         if (is.null(tse_raw())) {
             return(NULL)
         } else {
-            plotColData(tse(), "richness_observed", "condition", colour_by = "condition")
+            scater::plotColData(tse(), "richness_observed", "condition", colour_by = "condition")
         }
     })
 
@@ -160,7 +169,7 @@ server <- function(input, output) {
                   columns = list(feature = colDef(width = 350)))
         }
     })
-    
+
     output$dl_button <- renderUI({
       if (is.null(tse_raw())) {
         return(NULL)
@@ -181,12 +190,12 @@ server <- function(input, output) {
             plotAbundance(tse(), abund_values=abdc_metric(), rank = input$taxa_rank, use_relative=F)
         }
     })
-    
+
     # == JBrowser server from the JBrowser module ==
     mod_jb2_server("jb")
-    
+
 }
 
 
-# Run the application 
+# Run the application
 shinyApp(ui = ui, server = server)

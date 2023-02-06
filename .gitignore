@@ -1,5 +1,10 @@
 *.Rproj
-data
+data*/
+workflow/data
+.Rdata
+/doc/
+inst/doc
+/Meta/
 tmp
 test
 *.qmd
@@ -45,3 +50,4 @@ vignettes/*.pdf
 # R Environment Variables
 .Renviron
 !www/*.html
+.vscode
