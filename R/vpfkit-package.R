@@ -24,6 +24,7 @@
 #' @importFrom stringr str_replace
 #' @importFrom stringr str_replace_all
 #' @importFrom stringr str_to_title
+#' @importFrom SummarizedExperiment rowData
 #' @importFrom tibble column_to_rownames
 #' @importFrom tibble rownames_to_column
 ## usethis namespace: end

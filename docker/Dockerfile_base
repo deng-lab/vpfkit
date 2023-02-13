@@ -1,0 +1,7 @@
+FROM rocker/shiny-verse:4.2.2
+RUN apt-get update -y && apt-get install -y  git libcairo2-dev libclang-dev libcurl4-gnutls-dev libfontconfig1-dev libfreetype6-dev libfribidi-dev libgit2-dev libglpk-dev libgmp3-dev libgsl-dev libharfbuzz-dev libicu-dev libjpeg-dev libpng-dev libssl-dev libtiff-dev libxml2-dev make pandoc zlib1g-dev && rm -rf /var/lib/apt/lists/*
+RUN mkdir -p /usr/local/lib/R/etc/ /usr/lib/R/etc/
+RUN echo "options(renv.config.pak.enabled = TRUE, repos = c(CRAN = 'https://cran.rstudio.com/'), download.file.method = 'libcurl', Ncpus = 1)" | tee /usr/local/lib/R/etc/Rprofile.site | tee /usr/lib/R/etc/Rprofile.site
+RUN R -e 'install.packages(c("renv","remotes"))'
+COPY docker/renv.lock.prod renv.lock
+RUN R -e 'renv::restore()'

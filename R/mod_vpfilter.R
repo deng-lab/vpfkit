@@ -80,14 +80,14 @@ mod_vpfilter_server <- function(id) {
             return(NULL)
         } else {
             tse <- readRDS(input$file1$datapath)
-            feature_anno <- SummarizedExperiment::rowData(tse)
-            if (input$filter_logic == "AND") {
-                tse_sel <- tse[feature_anno[["checkv_quality"]] %in% input$checkv_quality &
-                               feature_anno[["vs2_category"]] %in% input$vs2_category, ]
-            } else {
-                tse_sel <- tse[feature_anno[["checkv_quality"]] %in% input$checkv_quality |
-                               feature_anno[["vs2_category"]] %in% input$vs2_category, ]
-            }
+            # print(tse)
+            # feature_anno <- SummarizedExperiment::rowData(tse) %>% data.frame()
+            # # print(feature_anno)
+            # if (input$filter_logic == "AND") {
+            #     tse_sel <- tse[feature_anno[["checkv_quality"]] %in% input$checkv_quality, ]
+            # } else {
+            #     tse_sel <- tse[feature_anno[["checkv_quality"]] %in% input$checkv_quality, ]
+            # }
         }})
 
     output$fileUploaded <- reactive ({
@@ -102,21 +102,27 @@ mod_vpfilter_server <- function(id) {
 
     abdc_metric <- reactive({
         if (input$abdc_metric == "read counts") {
-            return("counts")
+            return("count")
         } else if (input$abdc_metric == "trimmed mean") {
             return("trimmed_mean")
         }
     })
 
     tse <- reactive({
+      if (is.null(tse_raw())) {
+        return(NULL)
+      } else {
         tse <- tse_raw()
-        tse <- tse[SummarizedExperiment::rowData(tse)$checkv_contig_length>input$min_ctglen,]
+        rdata <- SummarizedExperiment::rowData(tse) %>% data.frame()
+        rsel <- rdata$checkv_contig_length>input$min_ctglen
+        tse <- tse[rsel,]
         tse <- refind_abundance(tse, abdc_metric(), "covfrac", input$min_covfrac)
         # tse <- tse[rowData()]
+      }
     })
 
     feature_meta <- reactive({
-      SummarizedExperiment::rowData(tse()) %>% as.data.frame()
+      SummarizedExperiment::rowData(tse()) %>% data.frame()
     })
 
     output$tbl_smeta <- renderReactable({
@@ -124,7 +130,7 @@ mod_vpfilter_server <- function(id) {
             return(NULL)
         } else {
           SummarizedExperiment::colData(tse()) %>%
-            as.data.frame() %>%
+            data.frame() %>%
             mutate(across(where(is.numeric), round, 4)) %>%
               reactable(
                 fullWidth = FALSE,

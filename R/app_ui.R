@@ -11,6 +11,7 @@ app_ui <- function(request) {
     # Your application UI logic
     navbarPage("ViroProfiler-viewer",
                tabPanel("Home", mod_vpfilter_ui("vpfilter_1")),
+               # tabPanel("Home", mod_vpfvtest_ui("vpfvtest_1")),
                # tabPanel("Genome Browser", fluidPage(mod_jb2_ui("jb"))),
                # tabPanel("Tutorial", fixedPage(withMathJax(includeMarkdown("inst/app/www/tutorial.md")), hr(), div(class="footer", includeHTML("inst/app/www/footer.html")))),
                theme = shinythemes::shinytheme("flatly"))

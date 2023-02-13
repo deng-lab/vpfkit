@@ -4,3 +4,6 @@
 ^\.Rproj\.user$
 data-raw/hpc
 workflow
+^app\.R$
+^rsconnect$
+^docker$

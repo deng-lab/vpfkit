@@ -4,14 +4,6 @@ library(mia)
 library(miaViz)
 library(TreeSummarizedExperiment)
 
-read_taxonomy <- function(fpath) {
-  df <- fread(fpath) %>%
-    mutate(Contig=str_replace(contig_id, "-cat_[1-6]", "")) %>%
-    mutate(virsorter_category=as.integer(str_replace(contig_id, ".*-cat_", "")))
-    # setnames("length", "viral_length")
-  return(df)
-}
-
 read_bins <- function(fbin, fbin_classify) {
   bin_classify <- fread(fbin_classify) %>%
     column_to_rownames("binname") %>%

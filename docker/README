@@ -1,0 +1,4 @@
+docker build -f Dockerfile_base --progress=plain -t vpfkit_base .
+docker build -f Dockerfile --progress=plain -t vpfkit:latest .
+docker run -p 80:80 vpfkit:latest
+# then go to 127.0.0.1:80

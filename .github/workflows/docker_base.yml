@@ -1,23 +1,21 @@
-name: DockerHub build and push
+name: DockerBase build and push
 
 on:
   push:
     tags:
-      - 'd*'
-      - 'v*'
+      - 'base*'
 
 jobs:
   docker:
 
     runs-on: ubuntu-latest
     timeout-minutes: 90
-
     strategy:
       fail-fast: false
       matrix:
         include:
-          - dockerfile: ./docker/Dockerfile
-            image: denglab/viroprofiler-viewer
+          - dockerfile: ./docker/Dockerfile_base
+            image: denglab/vpfkit_base
     
     permissions:
       contents: read
@@ -38,7 +36,7 @@ jobs:
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
-
+      
       - name: Extract metadata (tags, labels) for Docker
         id: meta
         uses: docker/metadata-action@v4

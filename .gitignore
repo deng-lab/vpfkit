@@ -51,3 +51,4 @@ vignettes/*.pdf
 .Renviron
 !www/*.html
 .vscode
+rsconnect
