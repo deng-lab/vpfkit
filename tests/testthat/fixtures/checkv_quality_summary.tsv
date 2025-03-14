@@ -1,0 +1,6 @@
+contig_id	contig_length	gene_count	viral_genes	host_genes	checkv_quality	miuvig_quality	completeness	completeness_method	contamination	provirus
+ctg001	25000	30	20	2	High-quality	High-quality	95.5	AAI-based	0	No
+ctg002	12000	15	10	1	Medium-quality	Medium-quality	60.2	HMM-based	0	No
+ctg003	8000	8	3	4	Low-quality	Genome-fragment	15.0	HMM-based	0	No
+ctg004	50000	45	35	0	Complete	High-quality	100.0	AAI-based	0	No
+ctg005	5000	5	1	3	Not-determined	Genome-fragment	0.0	NA	0	No

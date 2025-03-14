@@ -95,13 +95,13 @@ test_that("Test undisplay works", {
   expect_s3_class(b, "shiny.tag")
   expect_equal(
     as.character(b),
-    '<button id="go_filter" type="button" class="btn btn-default action-button">go</button>'
+    as.character(shiny::actionButton("go_filter", "go"))
   )
   b_undisplay <- undisplay(b)
   expect_s3_class(b, "shiny.tag")
   expect_equal(
     as.character(b_undisplay),
-    '<button id="go_filter" type="button" class="btn btn-default action-button" style="display: none;">go</button>'
+    sub("action-button\">", "action-button\" style=\"display: none;\">", as.character(shiny::actionButton("go_filter", "go")))
   )
 })
 

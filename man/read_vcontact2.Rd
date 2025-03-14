@@ -4,7 +4,7 @@
 \alias{read_vcontact2}
 \title{Import vConTACT2 results}
 \usage{
-read_vcontact2(fin, assembler_label = "_NODE_", version = "v1")
+read_vcontact2(fin, assembler_label = "_NODE_", version = "auto")
 }
 \arguments{
 \item{fin}{File `genome_by_genome_overview.csv` created by vConTACT2}

@@ -4,7 +4,7 @@
 \alias{read_taxonomy}
 \title{Read taxonomy table}
 \usage{
-read_taxonomy(fin, tool = "mmseqs", version = "v1")
+read_taxonomy(fin, tool = "mmseqs", version = "auto")
 }
 \arguments{
 \item{fin}{taxonomy annotation file}

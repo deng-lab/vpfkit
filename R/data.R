@@ -1,11 +1,2 @@
-#' TSE virome
-#'
-#' Virome contig annotation in TSE format
-#' Report ...
-#'
-#' @format
-#' TSE
-
-#' @source {Created in-house PAB profile}
-#' data(tse_virome)
-"tse_virome"
+# Package data documentation placeholder
+# No package data currently shipped. Add .rda files to data/ and document here.

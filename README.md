@@ -24,8 +24,8 @@ the [ViroProfiler](https://github.com/deng-lab/viroprofiler) pipeline.
 You can install vpfkit using the following command:
 
 ``` r
-install.packages("remotes")
-remotes::install_github("deng-lab/vpfkit")
+install.packages("pak")
+pak::pkg_install("deng-lab/vpfkit")
 ```
 
 Then you can load the package using:

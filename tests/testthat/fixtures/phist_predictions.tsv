@@ -1,0 +1,4 @@
+Virus	Host	Score	Host_taxonomy
+ctg001	Escherichia_coli	0.95	Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Escherichia
+ctg002	Bacillus_subtilis	0.70	Bacteria;Firmicutes;Bacilli;Bacillales;Bacillaceae;Bacillus
+ctg004	Salmonella_enterica	0.88	Bacteria;Proteobacteria;Gammaproteobacteria;Enterobacterales;Enterobacteriaceae;Salmonella

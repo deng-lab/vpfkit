@@ -4,7 +4,7 @@
 \alias{read_replicyc}
 \title{Read replication cycle prediction results from Bacphlip}
 \usage{
-read_replicyc(fin, tool = "bacphlip", version = "v1")
+read_replicyc(fin, tool = "bacphlip", version = "auto")
 }
 \arguments{
 \item{fin}{file path of Bacphlip}

@@ -1,0 +1,6 @@
+seq_name	length	topology	coordinates	n_genes	genetic_code	virus_score	fdr	n_hallmarks	marker_enrichment	taxonomy
+ctg001	25000	No terminal repeats	NA	30	11	0.95	0.001	3	1.5	Caudoviricetes;Caudovirales;Myoviridae
+ctg002	12000	No terminal repeats	NA	15	11	0.80	0.01	1	0.8	Caudoviricetes;Caudovirales;Siphoviridae
+ctg003	8000	No terminal repeats	NA	8	11	0.30	0.5	0	0.2	Unclassified
+ctg004	50000	DTR (direct terminal repeats)	1-350	45	11	0.99	0.0001	5	2.1	Caudoviricetes;Caudovirales;Podoviridae
+ctg005	5000	No terminal repeats	NA	5	11	0.15	0.8	0	0.1	Unclassified

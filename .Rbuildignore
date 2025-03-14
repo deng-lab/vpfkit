@@ -7,3 +7,14 @@ workflow
 ^app\.R$
 ^rsconnect$
 ^docker$
+^\.claude$
+^\.vscode$
+^CLAUDE\.md$
+^CODE_OF_CONDUCT\.md$
+^data-raw$
+^dev$
+^doc$
+^Dockerfile$
+^LICENSE\.md$
+^README\.Rmd$
+^tmp$

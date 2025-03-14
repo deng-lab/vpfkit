@@ -1,0 +1,6 @@
+seqname	dsDNAphage	ssDNA	NCLDV	RNA	lavidaviridae	max_score	max_score_group	length	hallmark
+ctg001	0.95	0.01	0.02	0.01	0.01	0.95	dsDNAphage	25000	2
+ctg002	0.80	0.05	0.10	0.03	0.02	0.80	dsDNAphage	12000	1
+ctg003	0.30	0.10	0.50	0.05	0.05	0.50	NCLDV	8000	0
+ctg004	0.99	0.00	0.00	0.00	0.01	0.99	dsDNAphage	50000	3
+ctg005	0.20	0.60	0.05	0.10	0.05	0.60	ssDNA	5000	0

@@ -1,0 +1,6 @@
+scaffold	type	Quality
+ctg001	lytic	high quality draft
+ctg002	lysogenic	medium quality draft
+ctg003	lytic	low quality draft
+ctg004	lytic	complete circular
+ctg001_fragment_1	lytic	low quality draft
