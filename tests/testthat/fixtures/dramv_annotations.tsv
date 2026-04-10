@@ -1,0 +1,9 @@
+fasta	scaffold	gene_position	start_position	end_position	strandedness	rank	ko_id	kegg_hit	pfam_hits	vogdb	auxiliary_score	amg_flags
+ctg001_1	ctg001	1	100	900	1	A	K00001	alcohol dehydrogenase	PF00107.28	VOG00001	1	M
+ctg001_2	ctg001	2	1000	1800	1	A	K00002	glycerol dehydrogenase	PF00106.27	VOG00002	2	MKE
+ctg001_3	ctg001	3	2000	2700	-1	V	NA	NA	NA	VOG00010	NA	NA
+ctg002_1	ctg002	1	100	800	1	A	K01810	glucose-6-phosphate isomerase	PF00342.20	NA	1	M
+ctg002_2	ctg002	2	900	1600	-1	V	NA	NA	PF03796.15	VOG00005	NA	NA
+ctg004_1	ctg004	1	100	1200	1	A	K00161	pyruvate dehydrogenase	PF00676.21	VOG00008	1	M
+ctg004_2	ctg004	2	1300	2000	1	H	NA	NA	NA	NA	NA	NA
+ctg004_3	ctg004	3	2100	2800	-1	V	NA	NA	PF01391.18	VOG00012	NA	NA

@@ -1,0 +1,8 @@
+gene	contig	start	end	strand	function	phrog	phrog_annot	phrog_category	card_match	vfdb_match
+ctg001_gene1	ctg001	100	900	+	tail fiber protein	phrog_1234	tail fiber	tail	NA	NA
+ctg001_gene2	ctg001	1000	1800	+	integrase	phrog_5678	integrase	integration	NA	VF0001
+ctg001_gene3	ctg001	2000	2700	-	hypothetical protein	NA	NA	unknown	NA	NA
+ctg002_gene1	ctg002	100	800	+	terminase large subunit	phrog_2345	terminase	DNA packaging	NA	NA
+ctg002_gene2	ctg002	900	1500	-	beta-lactamase	phrog_6789	beta-lactamase	lysis	ARO:3000001	NA
+ctg004_gene1	ctg004	100	1200	+	major capsid protein	phrog_3456	major capsid	head	NA	NA
+ctg004_gene2	ctg004	1300	2000	+	endolysin	phrog_4567	endolysin	lysis	ARO:3000002	VF0002

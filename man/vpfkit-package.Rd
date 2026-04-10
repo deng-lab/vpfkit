@@ -6,7 +6,7 @@
 \alias{vpfkit-package}
 \title{vpfkit: Analyzing ViroProfiler results}
 \description{
-An R package for analyzing ViroProfiler results
+An R package for analyzing ViroProfiler results.
 }
 \seealso{
 Useful links:

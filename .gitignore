@@ -1,5 +1,8 @@
 *.Rproj
+.shiny_dev.log
+.shiny_dev.pid
 data*/
+!data-raw/test_viroprofiler.rds
 workflow/data
 .Rdata
 /doc/
@@ -8,6 +11,7 @@ inst/doc
 tmp
 test
 *.qmd
+!inst/**/*.qmd
 *.RData
 *.html
 # History files
@@ -52,3 +56,6 @@ vignettes/*.pdf
 !www/*.html
 .vscode
 rsconnect
+.claude
+CLAUDE.md
+docs/superpowers

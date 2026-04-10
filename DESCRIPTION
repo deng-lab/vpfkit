@@ -1,17 +1,16 @@
 Package: vpfkit
 Title: Analyzing ViroProfiler results
-Version: 0.0.1
+Version: 0.5.0
 Authors@R: 
     person("Jinlong", "Ru", , "jinlong.ru@gmail.com", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0002-6757-6018"))
-Description: An R package for analyzing ViroProfiler results
-License: GPL (>= 3)
+Description: An R package for analyzing ViroProfiler results.
+License: GPL (>= 3) + file LICENSE
 URL: https://github.com/deng-lab/vpfkit
 BugReports: https://github.com/deng-lab/vpfkit/issues
 Depends: 
     R (>= 2.10)
-Imports: 
-    argparser,
+Imports:
     config,
     data.table,
     dplyr,
@@ -28,18 +27,23 @@ Imports:
     plotly,
     reactable,
     rlang,
+    S4Vectors,
     scater,
+    SingleCellExperiment,
+    SummarizedExperiment,
     shiny,
     shinythemes,
     stringr,
     tibble,
     tidyr,
-    tidyverse,
+    TreeSummarizedExperiment,
     vegan
-Suggests: 
+Suggests:
     knitr,
+    quarto,
     rmarkdown,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    withr
 remotes: 
     YuLab-SMU/ggtree
 VignetteBuilder: 
@@ -49,5 +53,4 @@ biocViews: scater, mia, miaViz, SummarizedExperiment,
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
-LazyData: true
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.3

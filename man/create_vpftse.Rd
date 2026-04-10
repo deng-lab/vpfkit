@@ -15,7 +15,12 @@ create_vpftse(
   fin_vibrant,
   fin_dvf,
   fin_replicyc,
-  df_metadata = NULL
+  df_metadata = NULL,
+  fin_genomad = NULL,
+  fin_vrhyme = NULL,
+  fin_phist = NULL,
+  fin_dramv = NULL,
+  fin_pharokka = NULL
 )
 }
 \arguments{
@@ -40,6 +45,16 @@ create_vpftse(
 \item{fin_replicyc}{File `putative_vcontigs_pref1.fasta.bacphlip` created by Replicyc}
 
 \item{df_metadata}{Metadata table as data.frame}
+
+\item{fin_genomad}{geNomad virus summary TSV (optional, NULL to skip)}
+
+\item{fin_vrhyme}{vRhyme bin-to-contig mapping (optional, NULL to skip)}
+
+\item{fin_phist}{PHIST host predictions TSV (optional, NULL to skip)}
+
+\item{fin_dramv}{DRAM-v annotations TSV (optional, NULL to skip)}
+
+\item{fin_pharokka}{pharokka CDS output TSV (optional, NULL to skip)}
 }
 \value{
 TreeSummarizedExperiment object

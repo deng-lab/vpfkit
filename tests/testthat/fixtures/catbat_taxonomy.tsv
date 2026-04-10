@@ -1,0 +1,3 @@
+# contig	classification	reason	lineage	lineage scores
+ctg001	taxid_assigned	based on ORFs	Viruses;Duplodnaviria;Uroviricota	0.95;0.90;0.85
+ctg002	taxid_assigned	based on ORFs	Viruses;Duplodnaviria	0.80;0.70
