@@ -2,20 +2,21 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_replicyc}
 \alias{read_replicyc}
-\title{Read replication cycle prediction results from Bacphlip}
+\title{Read replication cycle predictions from BACPHLIP}
 \usage{
 read_replicyc(fin, tool = "bacphlip", version = "auto")
 }
 \arguments{
-\item{fin}{file path of Bacphlip}
+\item{fin}{BACPHLIP result file}
 
-\item{tool}{tool name}
+\item{tool}{Tool name; only `"bacphlip"` is supported}
 
-\item{version}{tool version}
+\item{version}{ViroProfiler version: `"auto"`, `"v1"` or `"v2"`}
 }
 \value{
-data.frame
+data.frame with `Contig` and `bacphlip_replicyc`
 }
 \description{
-Read replication cycle prediction results from Bacphlip
+BACPHLIP writes a table whose first column header is empty, so
+`data.table::fread()` names it `V1`.
 }

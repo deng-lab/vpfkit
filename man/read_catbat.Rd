@@ -2,16 +2,19 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_catbat}
 \alias{read_catbat}
-\title{Read CATBAT results}
+\title{Read CAT/BAT results}
 \usage{
 read_catbat(fin)
 }
 \arguments{
-\item{fin}{CATBAT taxonomy annotation file}
+\item{fin}{CAT/BAT taxonomy annotation file}
 }
 \value{
-data.frame
+data.frame with `Contig` and `CATBAT_*` columns
 }
 \description{
-Read CATBAT results
+CAT/BAT is not part of the current ViroProfiler pipeline; this reader is kept
+for datasets produced by earlier versions. The contig identifier is returned
+as `Contig`, the name every other reader uses, so that the table can be joined
+by [create_vpftse()].
 }

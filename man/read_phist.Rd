@@ -7,11 +7,14 @@
 read_phist(fin)
 }
 \arguments{
-\item{fin}{PHIST predictions TSV file}
+\item{fin}{PHIST predictions file}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Read PHIST host predictions
+PHIST is not part of the current ViroProfiler pipeline; this reader is kept
+for externally produced predictions and has not been re-tested against real
+output. Both the capitalized (`Virus`/`Host`/`Score`) and the lowercase
+(`phage`/`host`) header spellings are accepted.
 }

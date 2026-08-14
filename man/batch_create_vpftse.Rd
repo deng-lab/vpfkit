@@ -2,21 +2,23 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{batch_create_vpftse}
 \alias{batch_create_vpftse}
-\title{Create TSE object from ViroProfiler output directory}
+\title{Create a TSE object from a ViroProfiler output directory}
 \usage{
 batch_create_vpftse(vpdir, df_metadata = NULL, version = "auto")
 }
 \arguments{
-\item{vpdir}{Path to ViroProfiler output directory}
+\item{vpdir}{Path to a ViroProfiler output directory}
 
 \item{df_metadata}{Optional sample metadata data.frame}
 
-\item{version}{ViroProfiler version: "auto" (default), "v1", or "v2"}
+\item{version}{Kept for backward compatibility and not used: each reader
+detects the identifier convention from the identifiers themselves}
 }
 \value{
 TreeSummarizedExperiment object
 }
 \description{
 Auto-discovers ViroProfiler output files from a standard directory structure
-and assembles a TreeSummarizedExperiment without manual file path specification.
+and assembles a `TreeSummarizedExperiment` without manual file path
+specification.
 }

@@ -1,5 +1,6 @@
-name	length	score	pvalue	qvalue
+name	len	score	pvalue	qvalue
 ctg001	25000	0.98	0.001	0.002
-ctg002	12000	0.85	0.005	0.008
+ctg002	12000	0.85	0.02	0.05
+ctg003	8000	0.6	0.2	0.3
 ctg004	50000	0.95	0.0001	0.0005
-ctg005	5000	0.50	0.1	0.2
+ctg005	5000	0.4	0.5	0.6

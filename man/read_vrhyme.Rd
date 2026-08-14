@@ -7,11 +7,17 @@
 read_vrhyme(fin)
 }
 \arguments{
-\item{fin}{vRhyme bin-to-contig mapping file}
+\item{fin}{vRhyme bin membership file}
 }
 \value{
-data.frame
+data.frame with `Contig` and `vrhyme_bin`
 }
 \description{
-Read vRhyme viral bin assignments
+Reads `out_vrhyme/vRhyme_best_bins.<N>.membership.tsv`, whose header is
+`scaffold`, `bin`, in that order. A generic `contig` column is also accepted.
+}
+\details{
+`bin` holds a plain integer, not a `vRhyme_bin_1` style label; the
+`vRhyme_<n>__` prefix appears only in the per-bin FASTA files. Unbinned
+scaffolds are absent from the file, so they end up with `NA` after the join.
 }

@@ -1,19 +1,183 @@
 ---
-title: "vpfkit"
+title: "Getting started with vpfkit"
 output: rmarkdown::html_vignette
 vignette: >
-  %\VignetteIndexEntry{vpfkit}
+  %\VignetteIndexEntry{Getting started with vpfkit}
   %\VignetteEngine{knitr::rmarkdown}
   %\VignetteEncoding{UTF-8}
 ---
 
 ```{r, include = FALSE}
-knitr::opts_chunk$set(
-  collapse = TRUE,
-  comment = "#>"
-)
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
 ```
 
 ```{r setup}
 library(vpfkit)
+library(SummarizedExperiment)
 ```
+
+vpfkit reads the result tables of a [ViroProfiler](https://github.com/deng-lab/viroprofiler)
+run, assembles them into one `TreeSummarizedExperiment` (TSE), and provides an
+interactive viewer, an HTML report and flat-file exports on top of it.
+
+## Building the object
+
+With a real ViroProfiler output directory you would call `create_vpftse()` with
+one file per tool, or `batch_create_vpftse()` on the directory as a whole:
+
+```{r create, eval = FALSE}
+tse <- create_vpftse(
+  fin_abcount    = "abundance/abundance_contigs_count.tsv.gz",
+  fin_abtpm      = "abundance/abundance_contigs_tpm.tsv.gz",
+  fin_abtmm      = "abundance/abundance_contigs_trimmed_mean.tsv.gz",
+  fin_abcov      = "abundance/abundance_contigs_covered_fraction.tsv.gz",
+  fin_taxa       = "taxonomy/taxonomy_tse.tsv",
+  fin_checkv     = "checkv/quality_summary.tsv",
+  fin_virsorter2 = "virsorter2/final-viral-score.tsv",
+  fin_vibrant    = "vibrant/VIBRANT_genome_quality.tsv",
+  fin_dvf        = "dvf/contigs.fa_gt1bp_dvfpred.txt",
+  fin_replicyc   = "bacphlip/contigs.fa.bacphlip"
+)
+
+# Everything under one ViroProfiler output directory:
+tse <- batch_create_vpftse("path/to/viroprofiler_output")
+```
+
+So that this vignette runs anywhere, the rest of it uses a small object with
+the same structure, built by hand:
+
+```{r toy}
+set.seed(1)
+contigs <- paste0("NODE_", 1:12, "_length_8000_cov_6.2")
+samples <- paste0("S", 1:4)
+
+mk <- function(f) matrix(f(length(contigs) * length(samples)),
+                         nrow = length(contigs),
+                         dimnames = list(contigs, samples))
+
+tse <- SummarizedExperiment(
+  assays = list(
+    counts       = mk(function(n) as.numeric(rpois(n, 40))),
+    tpm          = mk(function(n) round(runif(n, 0, 5000), 1)),
+    trimmed_mean = mk(function(n) round(runif(n, 0, 30), 2)),
+    covfrac      = mk(function(n) runif(n))
+  ),
+  rowData = S4Vectors::DataFrame(
+    checkv_quality       = rep(c("High-quality", "Medium-quality", "Low-quality"), 4),
+    checkv_contig_length = seq_len(12) * 1500L,
+    checkv_completeness  = seq(15, 98, length.out = 12),
+    Family               = rep(c("Peduoviridae", "Autographiviridae", NA), 4),
+    row.names            = contigs
+  ),
+  colData = S4Vectors::DataFrame(
+    sample_name = samples,
+    group       = rep(c("case", "control"), each = 2),
+    row.names   = samples
+  )
+)
+tse
+```
+
+## The four abundance assays
+
+ViroProfiler runs CoverM several times and vpfkit keeps four of the resulting
+tables. They are not interchangeable:
+
+```{r assays}
+assayNames(tse)
+```
+
+- `counts` — reads mapped per contig per sample.
+- `tpm` — transcripts per million; each column sums to 10^6^.
+- `trimmed_mean` — the trimmed mean of per-base coverage depth, in fold
+  coverage. Objects written by older versions of vpfkit store this under the
+  name `tmm`; both names work throughout the package. It is **not** edgeR's
+  Trimmed Mean of M-values.
+- `covfrac` — the covered fraction, i.e. the share of the contig covered at
+  least once.
+
+## Filtering by coverage breadth
+
+`covfrac` measures breadth, not abundance. A contig can accumulate reads over
+one short conserved stretch and have no coverage anywhere else; requiring a
+minimum breadth before believing an abundance removes most such false
+positives. Roux et al. (2017, *PeerJ* 5:e3817) use 75%; the ViroProfiler paper
+(Ru et al., 2023, *Gut Microbes*) uses 50%.
+
+`abundance_adjust_by_covfrac()` applies the mask. Apply it to **raw counts**,
+before any normalization: masking an already normalized matrix without
+renormalizing leaves every sample with a different residual scaling factor.
+
+```{r mask}
+counts_masked <- abundance_adjust_by_covfrac(
+  assay(tse, "counts"),
+  assay(tse, "covfrac"),
+  covfrac_threshold = 0.75
+)
+
+c(nonzero_before = sum(assay(tse, "counts") > 0),
+  nonzero_after  = sum(counts_masked > 0))
+```
+
+## Reports
+
+`generate_report()` renders a self-contained HTML summary. Every section
+degrades to an explanatory note when its input is missing, so an object
+without taxonomy or gene annotations still produces a complete report rather
+than failing.
+
+```{r report, eval = FALSE}
+generate_report(tse, "quality_report.html")
+
+# Mask before summarizing; the threshold is stated in the report.
+generate_report(tse, "quality_report_filtered.html", covfrac_threshold = 0.75)
+```
+
+Report generation needs the [Quarto CLI](https://quarto.org/docs/get-started/).
+The template is `system.file("report_template.qmd", package = "vpfkit")`; copy
+it and edit if you want a different report.
+
+## Exports
+
+```{r exports}
+outdir <- file.path(tempdir(), "vpfkit-vignette")
+
+export_abundance(tse, file.path(outdir, "abundance_counts.csv"))
+export_annotations(tse, file.path(outdir, "contig_annotations.tsv"))
+export_vpftse(tse, file.path(outdir, "viroprofiler_output.rds"))
+
+list.files(outdir)
+```
+
+Each exporter creates the output directory when it does not exist and returns
+the path it wrote. `export_abundance()` also writes xlsx, naming the worksheet
+after the assay:
+
+```{r export-xlsx, eval = requireNamespace("openxlsx", quietly = TRUE)}
+f <- file.path(outdir, "abundance.xlsx")
+export_abundance(tse, f, assay.type = "tpm", format = "xlsx")
+openxlsx::getSheetNames(f)
+```
+
+Contig identifiers are written into a leading `Contig` column, so they survive
+formats that have no concept of row names:
+
+```{r roundtrip}
+back <- read.csv(file.path(outdir, "abundance_counts.csv"), check.names = FALSE)
+identical(back$Contig, rownames(tse))
+```
+
+```{r cleanup, include = FALSE}
+unlink(outdir, recursive = TRUE)
+```
+
+## The interactive viewer
+
+```{r app, eval = FALSE}
+run_app()
+```
+
+`run_app()` starts ViroProfiler-viewer, which filters contigs by length,
+quality, taxonomy, host and replication cycle and shows the result as tables
+and plots. Upload a `viroprofiler_output.rds`, or one written by
+`export_vpftse()`.

@@ -4,20 +4,35 @@
 \alias{read_dvf}
 \title{Read DeepVirFinder results}
 \usage{
-read_dvf(fin, thr_score = 0.9, thr_pvalue = 0.01, thr_qvalue = 0.01)
+read_dvf(
+  fin,
+  thr_score = 0.9,
+  thr_pvalue = 0.01,
+  thr_qvalue = 0.01,
+  filter = TRUE
+)
 }
 \arguments{
-\item{fin}{file of DeepVirFinder results}
+\item{fin}{DeepVirFinder result file}
 
-\item{thr_score}{threshold of score}
+\item{thr_score}{Minimum score}
 
-\item{thr_pvalue}{threshold of pvalue}
+\item{thr_pvalue}{Maximum p-value}
 
-\item{thr_qvalue}{threshold of qvalue}
+\item{thr_qvalue}{Maximum q-value}
+
+\item{filter}{Keep only rows passing all three thresholds (default TRUE)}
 }
 \value{
-data.frame
+data.frame with `Contig`, `dvf_score`, `dvf_pvalue`, `dvf_qvalue`
 }
 \description{
-Read DeepVirFinder results
+DeepVirFinder is no longer run by ViroProfiler; the pipeline passes a
+placeholder table so that the argument stays filled. The reader is kept for
+datasets that do contain real DeepVirFinder output.
+}
+\details{
+Rows failing the thresholds are dropped, because [create_vpftse_vir()] reads
+a non-missing `dvf_score` as a positive call. The thresholds applied are
+recorded in `metadata(tse)$viral_selection`.
 }

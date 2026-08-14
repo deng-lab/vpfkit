@@ -7,11 +7,19 @@
 read_checkv(fin)
 }
 \arguments{
-\item{fin}{CheckV results}
+\item{fin}{CheckV `quality_summary.tsv`}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Add "checkv_" prefix to column names.
+Reads `quality_summary.tsv` as written by `checkv end_to_end`. Column names
+are prefixed with `checkv_`, except `checkv_quality`, which CheckV already
+names that way.
+}
+\details{
+CheckV marks an excised prophage with `provirus == "Yes"` and keeps the host
+contig identifier in `contig_id`, so identifiers join directly; ViroProfiler's
+`bin/run_checkv.sh` splits the two classes into separate files but does not
+rename anything.
 }

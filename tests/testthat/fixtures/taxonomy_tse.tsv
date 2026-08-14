@@ -1,0 +1,5 @@
+contig_id	taxa_id	Domain	Kingdom	Phylum	Class	Order	Family	Genus	Species
+ctg001	1	Duplodnaviria	Heunggongvirae	Uroviricota	Caudoviricetes	novel_order_22_of_Caudoviricetes	novel_family_1_of_novel_order_22_of_Caudoviricetes		
+ctg002	1	Duplodnaviria	Heunggongvirae	Uroviricota	Caudoviricetes				
+ctg004	1	Viruses							
+ctg005	0								

@@ -2,16 +2,24 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_vibrant}
 \alias{read_vibrant}
-\title{Read VIBRANT results}
+\title{Read VIBRANT genome quality results}
 \usage{
 read_vibrant(fin)
 }
 \arguments{
-\item{fin}{file of VIBRANT results}
+\item{fin}{VIBRANT genome quality file}
 }
 \value{
-data.table
+data.frame with `Contig`, `vibrant_replicyc` and `vibrant_quality`
 }
 \description{
-Read VIBRANT results
+Reads `VIBRANT_genome_quality_<name>.tsv`, whose columns are `scaffold`,
+`type` and `Quality`.
+}
+\details{
+VIBRANT names an excised prophage `<contig>_fragment_N`, so one input contig
+can produce several rows. The suffix is stripped and the best quality is kept.
+The quality levels are ordered best to worst — `complete circular`,
+`high quality draft`, `medium quality draft`, `low quality draft` — which is
+not their alphabetical order.
 }

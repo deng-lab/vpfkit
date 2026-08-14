@@ -403,3 +403,95 @@ make_action_button <- function(tag, inputId = NULL) {
 #'
 #'   return(HTML(html))
 #' }
+
+
+# ---------------------------------------------------------------------------
+# ViroProfiler-viewer UI helpers
+# ---------------------------------------------------------------------------
+
+#' A coloured message block
+#'
+#' @param ... Content of the block.
+#' @param type One of `info`, `warning`, `danger` or `success`.
+#' @param title Optional bold heading.
+#'
+#' @return A `div` tag.
+#' @noRd
+#' @importFrom shiny tags div
+vpf_notice <- function(..., type = c("info", "warning", "danger", "success"), title = NULL) {
+  type <- match.arg(type)
+  shiny::div(
+    class = paste0("alert alert-", type),
+    style = "margin-top: 8px; margin-bottom: 8px;",
+    if (!is.null(title)) shiny::tags$strong(title) else NULL,
+    if (!is.null(title)) shiny::tags$br() else NULL,
+    ...
+  )
+}
+
+#' Standard panel shown when an annotation family is absent
+#'
+#' Naming the ViroProfiler option that produces the annotation turns a dead end
+#' into an actionable instruction.
+#'
+#' @param family Human-readable annotation name.
+#' @param param The pipeline option that produces it.
+#' @param note What the annotation would contain.
+#'
+#' @return A `div` tag.
+#' @noRd
+vpf_missing_annotation <- function(family, param, note = NULL) {
+  vpf_notice(
+    type = "warning",
+    title = paste0(family, " is not present in this dataset"),
+    if (!is.null(note)) shiny::tags$p(note) else NULL,
+    shiny::tags$p(
+      "It is produced by the ViroProfiler option ",
+      shiny::tags$code(param),
+      ". Re-run the pipeline with that option enabled, then reload the result here."
+    )
+  )
+}
+
+#' Small muted caption used under plots and controls
+#'
+#' @param ... Text content.
+#' @return A `div` tag.
+#' @noRd
+vpf_caption <- function(...) {
+  shiny::div(
+    class = "text-muted",
+    style = "font-size: 0.85em; margin-top: 4px; margin-bottom: 10px;",
+    ...
+  )
+}
+
+#' A titled content block
+#'
+#' @param title Heading text.
+#' @param ... Block content.
+#' @return A `div` tag.
+#' @noRd
+vpf_card <- function(title, ...) {
+  shiny::div(
+    class = "well",
+    style = "background-color: #ffffff; border: 1px solid #e3e3e3; padding: 12px;",
+    shiny::tags$h4(title, style = "margin-top: 0;"),
+    ...
+  )
+}
+
+#' Single-line summary statistic
+#'
+#' @param label Statistic name.
+#' @param value Statistic value.
+#' @return A `div` tag.
+#' @noRd
+vpf_stat <- function(label, value) {
+  shiny::div(
+    style = "display: inline-block; margin-right: 24px; margin-bottom: 6px;",
+    shiny::tags$span(style = "color: #7b8a8b; font-size: 0.85em;", label),
+    shiny::tags$br(),
+    shiny::tags$span(style = "font-size: 1.3em; font-weight: 600;", value)
+  )
+}

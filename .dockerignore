@@ -1,0 +1,15 @@
+.git
+.github
+.Rproj.user
+*.Rproj
+data-raw
+dev
+docker
+inst/figures
+rsconnect
+tmp
+workflow
+README.Rmd
+CLAUDE.md
+.claude
+.vscode
