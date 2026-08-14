@@ -64,6 +64,16 @@ test_that("search and sort apply to the whole table, not just the page", {
   })
 })
 
+test_that("search treats special characters as literal text", {
+  df <- data.frame(value = c("a[b", "a(b", "plain"), stringsAsFactors = FALSE)
+  testServer(mod_bigtable_server, args = list(r_data = shiny::reactive(df)), {
+    session$setInputs(search = "[", sort_by = "", sort_dir = "asc", page_size = "25")
+    expect_equal(filtered()$value, "a[b")
+    session$setInputs(search = "(", sort_by = "", sort_dir = "asc", page_size = "25")
+    expect_equal(filtered()$value, "a(b")
+  })
+})
+
 test_that("changing the search resets to the first page", {
   df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
   testServer(mod_bigtable_server,

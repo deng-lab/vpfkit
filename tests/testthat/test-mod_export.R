@@ -35,6 +35,13 @@ test_that("provenance describes the selection even with nothing loaded", {
   })
 })
 
+test_that("report availability requires the Quarto CLI", {
+  local_mocked_bindings(.vpf_quarto_available = function() FALSE)
+  testServer(mod_export_server, args = list(r_filter = vpf_exp_filter(NULL)), {
+    expect_match(output$report_availability, "Quarto CLI")
+  })
+})
+
 test_that("provenance records the assay semantics and every filter step", {
   tse <- vpf_exp_demo()
   skip_if(is.null(tse), "demo dataset not available")

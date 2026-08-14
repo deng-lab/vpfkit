@@ -247,11 +247,10 @@ mod_export_server <- function(id, r_filter) {
     )
 
     output$report_availability <- renderUI({
-      if (!requireNamespace("quarto", quietly = TRUE)) {
+      if (!.vpf_quarto_available()) {
         return(vpf_notice(
           type = "warning",
-          "The quarto R package is not installed on this server, so report",
-          "generation is unavailable. Install it with install.packages('quarto')."
+          .vpf_quarto_hint()
         ))
       }
       NULL
