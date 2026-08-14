@@ -1,147 +1,751 @@
 ---
-title: "ViroProfiler Quality Report"
-date: "`r Sys.Date()`"
+title: "`r params$title`"
+date: today
+date-format: long
 format:
   html:
     toc: true
     toc-depth: 3
     embed-resources: true
+    code-fold: true
+    fig-align: center
 params:
   tse_path: NULL
+  assay_type: "counts"
+  title: "ViroProfiler Quality Report"
+  covfrac_threshold: "none"
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE)
-library(vpfkit)
+knitr::opts_chunk$set(
+  echo = FALSE, warning = FALSE, message = FALSE,
+  dev = "png", dpi = 150, fig.retina = 2
+)
 library(SummarizedExperiment)
 library(ggplot2)
-library(plotly)
+
+if (is.null(params$tse_path) || !nzchar(params$tse_path) || !file.exists(params$tse_path)) {
+  stop("Report parameter 'tse_path' does not point at a readable file.")
+}
 tse <- readRDS(params$tse_path)
-```
 
-## Dataset Summary
+## ---------------------------------------------------------------------------
+## This template is deliberately self-contained: it uses only SummarizedExperiment
+## and ggplot2 so that it renders during package checks, when vpfkit itself may
+## not be installed in the rendering subprocess.
+## ---------------------------------------------------------------------------
 
-```{r summary}
+## What each ViroProfiler assay actually measures. "tmm" is a legacy name for
+## CoverM's trimmed mean of per-base coverage depth; it is not edgeR's Trimmed
+## Mean of M-values.
+assay_aliases <- list(
+  counts         = c("counts", "count"),
+  tpm            = c("tpm", "TPM"),
+  trimmed_mean   = c("trimmed_mean", "tmm", "trimmed.mean"),
+  covfrac        = c("covfrac", "covered_fraction", "coverage_fraction"),
+  reads_per_base = c("reads_per_base", "rpb"),
+  rpkm           = c("rpkm", "RPKM")
+)
+assay_units <- c(
+  counts         = "CoverM read count (reads mapped per contig per sample)",
+  tpm            = "CoverM TPM (transcripts per million; each column sums to 1e6)",
+  trimmed_mean   = "CoverM trimmed mean of per-base coverage depth (fold)",
+  covfrac        = "CoverM covered fraction, i.e. breadth of coverage (0-1)",
+  reads_per_base = "CoverM reads per base (reads mapped / contig length)",
+  rpkm           = "CoverM RPKM"
+)
+canonical_assay <- function(x) {
+  for (nm in names(assay_aliases)) if (x %in% assay_aliases[[nm]]) return(nm)
+  x
+}
+match_assay <- function(obj, name) {
+  available <- assayNames(obj)
+  if (name %in% available) return(name)
+  cand <- assay_aliases[[canonical_assay(name)]]
+  hit <- if (is.null(cand)) character(0) else intersect(cand, available)
+  if (length(hit)) hit[[1]] else NA_character_
+}
+## Newer objects carry the authoritative unit strings written by
+## create_vpftse(). Prefer those; the table above is the fallback for objects
+## built before that metadata existed.
+vp_meta <- S4Vectors::metadata(tse)$viroprofiler
+assay_doc <- if (is.list(vp_meta) && is.list(vp_meta$assays)) vp_meta$assays else NULL
+describe_assay <- function(name) {
+  cn <- canonical_assay(name)
+  if (!is.null(assay_doc) && cn %in% names(assay_doc)) return(as.character(assay_doc[[cn]]))
+  if (cn %in% names(assay_units)) unname(assay_units[cn]) else "user-supplied assay (units unknown)"
+}
+
+rd <- as.data.frame(rowData(tse), optional = TRUE)
+cd <- as.data.frame(colData(tse), optional = TRUE)
 n_contigs <- nrow(tse)
 n_samples <- ncol(tse)
-assay_names <- paste(assayNames(tse), collapse = ", ")
-cat(sprintf("- **Contigs**: %d\n", n_contigs))
-cat(sprintf("- **Samples**: %d\n", n_samples))
-cat(sprintf("- **Assays**: %s\n", assay_names))
 
-rd <- as.data.frame(rowData(tse))
+## Resolve the working assays once.
+main_assay <- match_assay(tse, params$assay_type)
+covfrac_assay <- match_assay(tse, "covfrac")
+
+## Coverage-breadth masking. The threshold arrives as a string so that "none"
+## can travel through the YAML parameter file alongside numeric values.
+thr_raw <- params$covfrac_threshold
+covfrac_threshold <- suppressWarnings(as.numeric(thr_raw))
+masking_applied <- FALSE
+n_masked <- 0L
+if (!is.na(covfrac_threshold) && !is.na(main_assay) && !is.na(covfrac_assay)) {
+  ab <- as.matrix(assay(tse, main_assay))
+  cf <- as.matrix(assay(tse, covfrac_assay))
+  keep <- !is.na(cf) & cf >= covfrac_threshold
+  n_masked <- sum(ab > 0 & !keep, na.rm = TRUE)
+  ab[!keep] <- 0
+  assay(tse, main_assay) <- ab
+  masking_applied <- TRUE
+}
+
+## Helper: emit a plain explanatory note instead of a failed chunk.
+note <- function(...) {
+  cat("\n::: {.callout-note appearance=\"simple\"}\n", ..., "\n:::\n\n", sep = "")
+}
+
+## `%||%` is only in base R from 4.4.0 onwards.
+`%||%` <- function(x, y) if (is.null(x)) y else x
+```
+
+## Dataset summary
+
+```{r summary, output='asis'}
+cat(sprintf("- **Contigs**: %s\n", format(n_contigs, big.mark = ",")))
+cat(sprintf("- **Samples**: %s\n", format(n_samples, big.mark = ",")))
+cat("- **Assays**:\n")
+for (a in assayNames(tse)) {
+  cat(sprintf("    - `%s` — %s\n", a, describe_assay(a)))
+}
 if ("checkv_contig_length" %in% colnames(rd)) {
-  cat(sprintf("- **Total contig length**: %s bp\n", format(sum(rd$checkv_contig_length, na.rm = TRUE), big.mark = ",")))
-  cat(sprintf("- **Median contig length**: %s bp\n", format(median(rd$checkv_contig_length, na.rm = TRUE), big.mark = ",")))
+  L <- suppressWarnings(as.numeric(rd$checkv_contig_length))
+  if (any(is.finite(L))) {
+    cat(sprintf("- **Total contig length**: %s bp\n", format(sum(L, na.rm = TRUE), big.mark = ",")))
+    cat(sprintf("- **Median contig length**: %s bp\n",
+                format(round(stats::median(L, na.rm = TRUE)), big.mark = ",")))
+  }
+}
+cat(sprintf("- **Annotation columns**: %d\n", ncol(rd)))
+```
+
+```{r summary-warnings, output='asis'}
+if (n_contigs == 0L) {
+  note("This object contains no contigs. Every section below is empty.")
+} else if (n_samples < 3L) {
+  note(
+    sprintf("This dataset has %d sample%s. ", n_samples, if (n_samples == 1L) "" else "s"),
+    "Sections that compare samples (ordination, group testing) need at least three ",
+    "and are reported as unavailable rather than estimated from too little data."
+  )
 }
 ```
 
-## CheckV Quality Distribution
+## How these contigs were selected
+
+```{r viral-selection, output='asis'}
+vs <- S4Vectors::metadata(tse)$viral_selection
+if (is.null(vs)) {
+  note("This object carries no viral-selection record, so it holds every ",
+       "assembled contig rather than a selected viral subset. Build the subset ",
+       "with `create_vpftse_vir()` to record how the decision was made.")
+} else {
+  cat(sprintf("- **Rule**: %s\n", as.character(vs$rule %||% "unknown")))
+  if (!is.null(vs$combination)) cat(sprintf("- **Combination**: %s\n", as.character(vs$combination)))
+  if (!is.null(vs$n_selected) && !is.null(vs$n_total)) {
+    cat(sprintf("- **Selected**: %s of %s contigs (%.1f%%)\n",
+                format(vs$n_selected, big.mark = ","), format(vs$n_total, big.mark = ","),
+                100 * vs$n_selected / max(1L, vs$n_total)))
+  }
+  if (!is.null(vs$votes_used)) {
+    cat(sprintf("- **Detectors used**: %s\n", paste(as.character(vs$votes_used), collapse = ", ")))
+  }
+  if (length(vs$votes_missing)) {
+    cat(sprintf("- **Detectors unavailable**: %s\n",
+                paste(as.character(vs$votes_missing), collapse = ", ")))
+  }
+  if (!is.null(vs$n_by_vote) && length(vs$n_by_vote)) {
+    cat("\n")
+    print(knitr::kable(
+      data.frame(Detector = names(vs$n_by_vote),
+                 `Contigs supported` = as.integer(vs$n_by_vote), check.names = FALSE),
+      row.names = FALSE))
+    cat("\n")
+  }
+}
+```
+
+```{r evidence-strength, fig.width=7, fig.height=3.4}
+has_votes <- "viral_vote_n" %in% colnames(rd) && n_contigs > 0L
+if (has_votes) {
+  vn <- as.data.frame(table(factor(rd$viral_vote_n)), stringsAsFactors = FALSE)
+  colnames(vn) <- c("Votes", "Contigs")
+  ggplot(vn, aes(x = Votes, y = Contigs)) +
+    geom_col(fill = "#7E57C2") +
+    theme_minimal() +
+    labs(title = "Evidence strength per contig",
+         subtitle = "Number of independent detectors calling each contig viral",
+         x = "Detectors in agreement", y = "Contigs")
+}
+```
+
+```{r evidence-note, output='asis'}
+if (has_votes) {
+  single <- sum(rd$viral_vote_n <= 1, na.rm = TRUE)
+  cat(sprintf("\n%d of %d contigs (%.0f%%) rest on a single detector. Those are the ",
+              single, n_contigs, 100 * single / max(1L, n_contigs)))
+  cat("calls most likely to be false positives.\n")
+  if ("viral_vote_evidence" %in% colnames(rd)) {
+    ev <- as.data.frame(table(rd$viral_vote_evidence, useNA = "no"), stringsAsFactors = FALSE)
+    if (nrow(ev)) {
+      colnames(ev) <- c("Evidence combination", "Contigs")
+      ev <- utils::head(ev[order(-ev$Contigs), ], 10)
+      cat("\n")
+      print(knitr::kable(ev, row.names = FALSE))
+      cat("\n")
+    }
+  }
+}
+```
+
+## Annotation join quality
+
+```{r join-match, output='asis'}
+jm <- if (is.list(vp_meta)) vp_meta$join_match else NULL
+if (is.null(jm) || length(jm) == 0L) {
+  note("No per-tool join statistics are recorded in this object, so the share ",
+       "of contigs each annotation table matched cannot be shown.")
+} else {
+  rows <- lapply(names(jm), function(tool) {
+    s <- jm[[tool]]
+    data.frame(
+      Tool = tool,
+      Matched = as.integer(s$matched %||% NA),
+      `Rows in table` = as.integer(s$n_table %||% s$total %||% NA),
+      `Match rate` = if (!is.null(s$rate)) sprintf("%.1f%%", 100 * s$rate) else NA_character_,
+      check.names = FALSE, stringsAsFactors = FALSE
+    )
+  })
+  tab <- do.call(rbind, rows)
+  cat("\nHow many contigs each annotation table matched. A low rate usually ",
+      "means mismatched contig identifiers rather than missing biology.\n\n", sep = "")
+  print(knitr::kable(tab, row.names = FALSE))
+  cat("\n")
+}
+```
+
+## Abundance provenance
+
+```{r provenance, output='asis'}
+if (is.na(main_assay)) {
+  note(sprintf("Assay '%s' is not present, so no abundance is summarized. Available: %s.",
+               params$assay_type,
+               if (length(assayNames(tse))) paste(assayNames(tse), collapse = ", ") else "none"))
+} else {
+  cat(sprintf("- **Assay used below**: `%s` — %s\n", main_assay, describe_assay(main_assay)))
+  if (masking_applied) {
+    cat(sprintf(
+      paste0("- **Coverage-breadth masking**: applied at covered fraction >= %s, ",
+             "using assay `%s`. %s of the non-zero entries were set to zero.\n"),
+      format(covfrac_threshold), covfrac_assay, format(n_masked, big.mark = ",")))
+    cat(paste0("- **Order of operations**: masking was applied to the stored `",
+               main_assay, "` values before anything below was computed.\n"))
+    if (canonical_assay(main_assay) %in% c("tpm", "rpkm")) {
+      cat(paste0("- **Caveat**: `", main_assay, "` is already normalized. Masking it after ",
+                 "normalization leaves each sample with its own residual scaling factor, so ",
+                 "columns no longer sum to a common total. Mask raw counts and re-normalize ",
+                 "instead.\n"))
+    }
+  } else {
+    cat("- **Coverage-breadth masking**: not applied. Values are shown exactly as stored.\n")
+  }
+}
+```
+
+```{r provenance-note, output='asis'}
+note(
+  "A viral contig can accumulate reads over one short conserved stretch while the rest ",
+  "of its length has no coverage at all. Requiring a minimum **breadth** of coverage ",
+  "before an abundance is believed removes most of those false positives. The commonly ",
+  "used convention is 75% of the contig covered at least once, combined with a strict ",
+  "read identity threshold (Roux et al., 2017, *PeerJ* 5:e3817, doi:10.7717/peerj.3817); ",
+  "the ViroProfiler paper uses 50% (Ru et al., 2023, *Gut Microbes*, ",
+  "doi:10.1080/19490976.2023.2192522). Masking belongs **before** normalization: masking ",
+  "an already-normalized matrix without renormalizing gives every sample a different ",
+  "scaling factor (Kuzub et al., 2025, *Nat Commun*, doi:10.1038/s41467-025-61478-7)."
+)
+```
+
+## Coverage breadth
+
+```{r covfrac-table, output='asis'}
+if (is.na(covfrac_assay) || n_contigs == 0L) {
+  note("No covered-fraction assay is stored, so coverage breadth cannot be summarized.")
+} else {
+  cf <- as.matrix(assay(tse, covfrac_assay))
+  thresholds <- c(0.1, 0.25, 0.5, 0.75, 0.9)
+  tab <- data.frame(
+    `Minimum covered fraction` = sprintf(">= %.2f", thresholds),
+    `Contig-sample pairs retained` = vapply(
+      thresholds, function(t) sum(!is.na(cf) & cf >= t), integer(1)),
+    `Percent of non-zero pairs` = sprintf(
+      "%.1f%%",
+      100 * vapply(thresholds, function(t) sum(!is.na(cf) & cf >= t), integer(1)) /
+        max(1L, sum(!is.na(cf) & cf > 0))),
+    check.names = FALSE
+  )
+  cat("\nHow many contig-sample pairs survive each candidate threshold:\n\n")
+  print(knitr::kable(tab, row.names = FALSE))
+  cat("\n")
+}
+```
+
+```{r covfrac-plot, fig.width=8, fig.height=4}
+if (!is.na(covfrac_assay) && n_contigs > 0L) {
+  cf <- as.matrix(assay(tse, covfrac_assay))
+  dfc <- data.frame(covfrac = as.vector(cf),
+                    Sample = rep(colnames(cf) %||% seq_len(ncol(cf)), each = nrow(cf)))
+  dfc <- dfc[!is.na(dfc$covfrac) & dfc$covfrac > 0, , drop = FALSE]
+  if (nrow(dfc) > 0) {
+    p <- ggplot(dfc, aes(x = covfrac)) +
+      geom_histogram(bins = 20, fill = "#4ECDC4", colour = "white") +
+      facet_wrap(~ Sample) +
+      theme_minimal() +
+      labs(x = "Covered fraction (breadth of coverage)", y = "Contig-sample pairs",
+           title = "Coverage breadth of detected contigs",
+           subtitle = "Zero-coverage pairs omitted")
+    if (!is.na(covfrac_threshold)) {
+      p <- p + geom_vline(xintercept = covfrac_threshold, linetype = 2, colour = "#D7263D")
+    }
+    print(p)
+  }
+}
+```
+
+## Sample metadata
+
+```{r sample-metadata, output='asis'}
+if (ncol(cd) == 0L) {
+  note("`colData` is empty, so no sample metadata can be shown.")
+} else {
+  print(knitr::kable(utils::head(cd, 50), row.names = TRUE))
+  cat("\n")
+  ## A grouping variable is any categorical column with 2+ levels that is not a
+  ## per-sample identifier.
+  is_group <- vapply(names(cd), function(nm) {
+    v <- cd[[nm]]
+    if (!(is.character(v) || is.factor(v) || is.logical(v))) return(FALSE)
+    k <- length(unique(v[!is.na(v)]))
+    k >= 2L && k < length(v)
+  }, logical(1))
+  if (any(is_group)) {
+    cat(sprintf("\nCandidate grouping variable(s): %s\n",
+                paste(sprintf("`%s`", names(cd)[is_group]), collapse = ", ")))
+  } else {
+    cat("\n")
+    note("No grouping variable is present in `colData`: every metadata column is either ",
+         "numeric or unique per sample. Group comparisons are therefore not shown. ",
+         "Add a sample-metadata column to enable them.")
+  }
+}
+```
+
+## CheckV quality
 
 ```{r checkv-quality, fig.width=8, fig.height=4}
-rd <- as.data.frame(rowData(tse))
-if ("checkv_quality" %in% colnames(rd)) {
-  quality_counts <- as.data.frame(table(rd$checkv_quality, useNA = "ifany"))
-  colnames(quality_counts) <- c("Quality", "Count")
-  ggplot(quality_counts, aes(x = Quality, y = Count, fill = Quality)) +
+has_quality <- "checkv_quality" %in% colnames(rd) && n_contigs > 0L
+if (has_quality) {
+  qc <- as.data.frame(table(as.character(rd$checkv_quality), useNA = "ifany"),
+                      stringsAsFactors = FALSE)
+  colnames(qc) <- c("Quality", "Count")
+  qc$Quality[is.na(qc$Quality)] <- "Not reported"
+  ggplot(qc, aes(x = stats::reorder(Quality, -Count), y = Count, fill = Quality)) +
     geom_col() +
     theme_minimal() +
-    labs(title = "CheckV Quality Distribution", x = NULL, y = "Number of contigs") +
+    labs(title = "CheckV quality distribution", x = NULL, y = "Number of contigs") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.position = "none")
-} else {
-  cat("CheckV quality data not available.")
 }
+```
+
+```{r checkv-quality-note, output='asis'}
+if (!has_quality) note("No `checkv_quality` column is present, so CheckV quality is not summarized.")
 ```
 
 ```{r checkv-length, fig.width=8, fig.height=4}
-if (all(c("checkv_contig_length", "checkv_quality") %in% colnames(rd))) {
-  ggplot(rd, aes(x = checkv_contig_length, fill = checkv_quality)) +
-    geom_histogram(alpha = 0.8, bins = 50) +
-    scale_x_log10() +
-    theme_minimal() +
-    labs(title = "Contig Length Distribution by Quality", x = "Contig length (bp, log10)", y = "Count")
+has_len <- all(c("checkv_contig_length", "checkv_quality") %in% colnames(rd)) && n_contigs > 1L
+if (has_len) {
+  dl <- rd[is.finite(suppressWarnings(as.numeric(rd$checkv_contig_length))), , drop = FALSE]
+  dl$checkv_contig_length <- as.numeric(dl$checkv_contig_length)
+  if (nrow(dl) > 0) {
+    ggplot(dl, aes(x = checkv_contig_length, fill = checkv_quality)) +
+      geom_histogram(alpha = 0.8, bins = min(50L, max(5L, nrow(dl)))) +
+      scale_x_log10() +
+      theme_minimal() +
+      labs(title = "Contig length by CheckV quality",
+           x = "Contig length (bp, log10)", y = "Contigs", fill = "Quality")
+  }
 }
 ```
 
 ## Completeness
 
 ```{r completeness, fig.width=8, fig.height=4}
-if ("checkv_completeness" %in% colnames(rd)) {
-  ggplot(rd, aes(x = checkv_completeness, fill = checkv_quality)) +
-    geom_histogram(alpha = 0.8, bins = 50) +
+comp <- if ("checkv_completeness" %in% colnames(rd)) suppressWarnings(as.numeric(rd$checkv_completeness)) else numeric(0)
+has_comp <- length(comp) > 0 && any(is.finite(comp))
+if (has_comp) {
+  dc <- data.frame(
+    completeness = comp,
+    quality = if ("checkv_quality" %in% colnames(rd)) as.character(rd$checkv_quality) else "All contigs"
+  )
+  dc <- dc[is.finite(dc$completeness), , drop = FALSE]
+  ggplot(dc, aes(x = completeness, fill = quality)) +
+    geom_histogram(alpha = 0.8, bins = min(50L, max(5L, nrow(dc)))) +
     theme_minimal() +
-    labs(title = "Genome Completeness Distribution", x = "Completeness (%)", y = "Count")
+    labs(title = "Genome completeness (CheckV)", x = "Completeness (%)",
+         y = "Contigs", fill = "Quality")
 }
 ```
 
-## Taxonomy Composition
+```{r completeness-note, output='asis'}
+if (!has_comp) {
+  n_na <- if ("checkv_completeness" %in% colnames(rd)) sum(!is.finite(suppressWarnings(as.numeric(rd$checkv_completeness)))) else NA
+  note(if (is.na(n_na)) "No `checkv_completeness` column is present."
+       else sprintf("`checkv_completeness` is present but has no finite values (%d missing).", n_na))
+}
+```
+
+## Taxonomy
 
 ```{r taxonomy, fig.width=10, fig.height=6}
-if ("Family" %in% colnames(rd)) {
-  family_counts <- as.data.frame(table(rd$Family, useNA = "ifany"))
-  colnames(family_counts) <- c("Family", "Count")
-  family_counts <- family_counts[order(-family_counts$Count), ]
-  family_counts <- head(family_counts, 20)
-  ggplot(family_counts, aes(x = reorder(Family, Count), y = Count)) +
+ranks <- c("Domain", "Kingdom", "Phylum", "Class", "Order", "Family", "Genus", "Species")
+present_ranks <- intersect(ranks, colnames(rd))
+plot_rank <- NA_character_
+if (length(present_ranks) > 0 && n_contigs > 0L) {
+  ## Prefer Family; fall back to the most finely resolved rank that has at
+  ## least one assignment.
+  informative <- vapply(present_ranks, function(r) {
+    v <- as.character(rd[[r]]); sum(!is.na(v) & nzchar(v) & v != "NA") > 0
+  }, logical(1))
+  if (any(informative)) {
+    plot_rank <- if ("Family" %in% present_ranks[informative]) "Family" else
+      utils::tail(present_ranks[informative], 1)
+  }
+}
+if (!is.na(plot_rank)) {
+  v <- as.character(rd[[plot_rank]])
+  v[is.na(v) | !nzchar(v) | v == "NA"] <- "Unassigned"
+  fc <- as.data.frame(table(v), stringsAsFactors = FALSE)
+  colnames(fc) <- c("Taxon", "Count")
+  fc <- utils::head(fc[order(-fc$Count), ], 20)
+  ## Long "novel_family_1_of_novel_order_22_of_Caudoviricetes" labels are the
+  ## norm in viral taxonomy; wrap rather than truncate.
+  fc$Taxon <- vapply(fc$Taxon, function(s) paste(strwrap(s, width = 42), collapse = "\n"), character(1))
+  ggplot(fc, aes(x = stats::reorder(Taxon, Count), y = Count)) +
     geom_col(fill = "#4ECDC4") +
     coord_flip() +
-    theme_minimal() +
-    labs(title = "Top 20 Viral Families", x = NULL, y = "Number of contigs")
-} else {
-  cat("Taxonomy data not available.")
+    theme_minimal(base_size = 11) +
+    labs(title = sprintf("Contigs per %s (top %d)", plot_rank, nrow(fc)), x = NULL,
+         y = "Number of contigs")
 }
 ```
 
-## Alpha Diversity
+```{r taxonomy-note, output='asis'}
+if (is.na(plot_rank)) {
+  note(if (length(present_ranks) == 0)
+         "No taxonomic rank columns are present, so taxonomy is not summarized."
+       else sprintf("Rank columns are present (%s) but every value is missing.",
+                    paste(present_ranks, collapse = ", ")))
+} else {
+  n_unassigned <- sum(is.na(rd[[plot_rank]]) | !nzchar(as.character(rd[[plot_rank]])) |
+                        as.character(rd[[plot_rank]]) == "NA")
+  cat(sprintf("\n%d of %d contigs (%.0f%%) have no %s assignment.\n",
+              n_unassigned, n_contigs, 100 * n_unassigned / max(1L, n_contigs), plot_rank))
+}
+```
+
+## Alpha diversity
 
 ```{r alpha-diversity, fig.width=8, fig.height=4}
-if (requireNamespace("mia", quietly = TRUE)) {
-  tse_div <- mia::estimateDiversity(tse, assay.type = "counts", index = "shannon", name = "Shannon")
-  cd <- as.data.frame(colData(tse_div))
-  cd$Sample <- rownames(cd)
-  ggplot(cd, aes(x = Sample, y = Shannon)) +
-    geom_point(size = 3, color = "#2196F3") +
-    theme_minimal() +
-    labs(title = "Shannon Diversity per Sample", y = "Shannon Index") +
+alpha_status <- "ok"
+alpha_df <- NULL
+if (is.na(main_assay)) {
+  alpha_status <- "no-assay"
+} else if (canonical_assay(main_assay) %in% c("covfrac")) {
+  alpha_status <- "wrong-assay"
+} else if (n_samples < 1L || n_contigs < 2L) {
+  alpha_status <- "too-small"
+} else {
+  m <- as.matrix(assay(tse, main_assay))
+  m[!is.finite(m)] <- 0
+  ## Shannon computed directly: no dependency on which mia generation is
+  ## installed, and no silent behaviour change when mia renames its functions.
+  shannon <- apply(m, 2, function(x) {
+    x <- x[x > 0]
+    if (length(x) == 0) return(NA_real_)
+    p <- x / sum(x)
+    -sum(p * log(p))
+  })
+  observed <- apply(m, 2, function(x) sum(x > 0))
+  alpha_df <- data.frame(
+    Sample = colnames(m) %||% paste0("S", seq_len(ncol(m))),
+    Shannon = shannon, Observed = observed, check.names = FALSE
+  )
+}
+if (!is.null(alpha_df)) {
+  ad <- alpha_df[is.finite(alpha_df$Shannon), , drop = FALSE]
+  if (nrow(ad) > 0) {
+    ggplot(ad, aes(x = stats::reorder(Sample, -Shannon), y = Shannon)) +
+      geom_col(fill = "#2196F3", width = 0.6) +
+      theme_minimal() +
+      labs(title = "Shannon diversity per sample", x = NULL, y = "Shannon index",
+           subtitle = sprintf("Computed from assay `%s`%s", main_assay,
+                              if (masking_applied) sprintf(", masked at covered fraction >= %s",
+                                                           format(covfrac_threshold)) else ", unmasked")) +
+      theme(axis.text.x = element_text(angle = 45, hjust = 1))
+  }
+}
+```
+
+```{r alpha-note, output='asis'}
+if (!is.null(alpha_df)) {
+  print(knitr::kable(alpha_df, row.names = FALSE, digits = 3))
+  cat("\n")
+} else {
+  note(switch(alpha_status,
+    "no-assay"    = "No usable abundance assay, so diversity is not computed.",
+    "wrong-assay" = paste0("The selected assay is a covered fraction, which measures breadth ",
+                           "of coverage rather than abundance. Diversity indices computed from ",
+                           "it would be meaningless, so none are shown."),
+    "too-small"   = "Too few contigs or samples to compute a diversity index.",
+    "Diversity is not available for this dataset."))
+}
+```
+
+```{r alpha-by-group, fig.width=6, fig.height=4}
+group_col <- NULL
+if (ncol(cd) > 0L) {
+  cand <- vapply(names(cd), function(nm) {
+    v <- cd[[nm]]
+    if (!(is.character(v) || is.factor(v) || is.logical(v))) return(FALSE)
+    k <- length(unique(v[!is.na(v)]))
+    k >= 2L && k < length(v)
+  }, logical(1))
+  if (any(cand)) group_col <- names(cd)[cand][1]
+}
+group_alpha_status <- "none"
+if (!is.null(alpha_df) && !is.null(group_col)) {
+  ad <- alpha_df[is.finite(alpha_df$Shannon), , drop = FALSE]
+  ad$Group <- as.character(cd[[group_col]])[match(ad$Sample, rownames(cd))]
+  ad <- ad[!is.na(ad$Group), , drop = FALSE]
+  sizes <- table(ad$Group)
+  if (length(sizes) >= 2L && min(sizes) >= 3L) {
+    group_alpha_status <- "ok"
+    p <- ggplot(ad, aes(x = Group, y = Shannon, fill = Group)) +
+      geom_boxplot(alpha = 0.6, outlier.shape = NA, width = 0.55) +
+      geom_jitter(width = 0.12, height = 0, size = 2, alpha = 0.8) +
+      theme_minimal() +
+      labs(title = sprintf("Shannon diversity by %s", group_col),
+           subtitle = sprintf("Assay `%s`%s", main_assay,
+                              if (masking_applied)
+                                sprintf(", masked at covered fraction >= %s", format(covfrac_threshold))
+                              else ", unmasked"),
+           x = NULL, y = "Shannon index") +
+      theme(legend.position = "none")
+    print(p)
+  } else {
+    group_alpha_status <- "too-small"
+  }
+}
+```
+
+```{r alpha-by-group-note, output='asis'}
+if (group_alpha_status == "ok") {
+  ad <- alpha_df[is.finite(alpha_df$Shannon), , drop = FALSE]
+  ad$Group <- as.character(cd[[group_col]])[match(ad$Sample, rownames(cd))]
+  ad <- ad[!is.na(ad$Group), , drop = FALSE]
+  k <- length(unique(ad$Group))
+  ## Rank-based throughout: sample sizes here are small and Shannon indices
+  ## are not expected to be normally distributed.
+  tt <- tryCatch(
+    if (k == 2L) stats::wilcox.test(Shannon ~ factor(Group), data = ad, exact = FALSE)
+    else stats::kruskal.test(Shannon ~ factor(Group), data = ad),
+    error = function(e) NULL)
+  if (!is.null(tt)) {
+    cat(sprintf("\n%s: p = %.3g (n = %s).\n", tt$method, tt$p.value,
+                paste(sprintf("%s: %d", names(table(ad$Group)), as.integer(table(ad$Group))),
+                      collapse = ", ")))
+    cat("\nThis is a single unadjusted test on one index; treat it as descriptive.\n")
+  }
+} else if (group_alpha_status == "too-small") {
+  note(sprintf("A grouping variable (`%s`) is present, but at least one group has ", group_col),
+       "fewer than three samples, so no group comparison is reported.")
+}
+```
+
+## Beta diversity
+
+```{r beta-diversity, fig.width=6.5, fig.height=5}
+beta_status <- "ok"
+beta_p <- NULL
+if (n_samples < 3L) {
+  beta_status <- "too-few-samples"
+} else if (is.na(main_assay) || canonical_assay(main_assay) == "covfrac") {
+  beta_status <- "wrong-assay"
+} else if (!requireNamespace("vegan", quietly = TRUE)) {
+  beta_status <- "no-vegan"
+} else {
+  m <- as.matrix(assay(tse, main_assay))
+  m[!is.finite(m)] <- 0
+  ## Samples with nothing in them make Bray-Curtis undefined.
+  keep <- colSums(m) > 0
+  if (sum(keep) < 3L) {
+    beta_status <- "empty-samples"
+  } else {
+    m <- m[, keep, drop = FALSE]
+    d <- vegan::vegdist(t(m), method = "bray")
+    if (anyNA(d)) {
+      beta_status <- "undefined-distance"
+    } else {
+      pc <- stats::cmdscale(d, k = 2, eig = TRUE)
+      eig <- pc$eig
+      pct <- if (any(eig > 0)) 100 * eig / sum(eig[eig > 0]) else c(NA, NA)
+      dfb <- data.frame(Axis1 = pc$points[, 1], Axis2 = pc$points[, 2],
+                        Sample = rownames(pc$points))
+      dfb$Group <- if (!is.null(group_col))
+        as.character(cd[[group_col]])[match(dfb$Sample, rownames(cd))] else "All samples"
+
+      p <- ggplot(dfb, aes(x = Axis1, y = Axis2, colour = Group)) +
+        geom_point(size = 3) +
+        theme_minimal() +
+        labs(title = "PCoA on Bray-Curtis dissimilarity",
+             subtitle = sprintf("Assay `%s`%s", main_assay,
+                                if (masking_applied)
+                                  sprintf(", masked at covered fraction >= %s", format(covfrac_threshold))
+                                else ", unmasked"),
+             x = if (is.na(pct[1])) "Axis 1" else sprintf("Axis 1 (%.1f%%)", pct[1]),
+             y = if (is.na(pct[2])) "Axis 2" else sprintf("Axis 2 (%.1f%%)", pct[2]))
+      if (is.null(group_col)) p <- p + theme(legend.position = "none")
+      ## An ellipse needs more than three points per group.
+      if (!is.null(group_col) && min(table(dfb$Group)) >= 4L) {
+        p <- p + ggplot2::stat_ellipse(alpha = 0.6, linetype = 2)
+      }
+      print(p)
+
+      if (!is.null(group_col) && length(unique(dfb$Group)) >= 2L &&
+          min(table(dfb$Group)) >= 3L) {
+        beta_p <- tryCatch({
+          set.seed(1)
+          a <- vegan::adonis2(d ~ Group, data = dfb, permutations = 999)
+          list(p = a$`Pr(>F)`[1], r2 = a$R2[1])
+        }, error = function(e) NULL)
+      }
+    }
+  }
+}
+```
+
+```{r beta-note, output='asis'}
+if (beta_status == "ok") {
+  if (!is.null(beta_p)) {
+    cat(sprintf("\nPERMANOVA on Bray-Curtis distances by `%s`: R2 = %.3f, p = %.3g (999 permutations).\n",
+                group_col, beta_p$r2, beta_p$p))
+    cat("\nPERMANOVA is sensitive to unequal within-group dispersion; a significant ",
+        "result can reflect a difference in spread rather than in location.\n", sep = "")
+  } else if (!is.null(group_col)) {
+    cat("\nToo few samples per group for a PERMANOVA.\n")
+  }
+} else {
+  note(switch(beta_status,
+    "too-few-samples" = sprintf(
+      paste0("Ordination needs at least three samples to place points in a meaningful ",
+             "space; this dataset has %d. A distance between two samples is a single ",
+             "number and carries no ordination geometry, so no plot is shown."), n_samples),
+    "wrong-assay" = paste0("The selected assay is a covered fraction, which measures ",
+                           "breadth of coverage rather than abundance, so no dissimilarity ",
+                           "is computed from it."),
+    "no-vegan" = "The vegan package is unavailable, so no ordination is shown.",
+    "empty-samples" = "Fewer than three samples contain any signal in the selected assay.",
+    "undefined-distance" = "The Bray-Curtis dissimilarity is undefined for these samples.",
+    "No ordination is available for this dataset."))
+}
+```
+
+## Abundance overview
+
+```{r abundance-heatmap, fig.width=9, fig.height=7}
+has_ab <- !is.na(main_assay) && n_contigs > 0L && n_samples > 0L
+if (has_ab) {
+  m <- as.matrix(assay(tse, main_assay))
+  m[!is.finite(m)] <- 0
+  top_n <- min(30L, nrow(m))
+  idx <- order(rowMeans(m), decreasing = TRUE)[seq_len(top_n)]
+  mt <- m[idx, , drop = FALSE]
+  rn <- rownames(mt) %||% paste0("row", seq_len(nrow(mt)))
+  ## Truncate only for display; contig names from SPAdes are very long.
+  rn_short <- ifelse(nchar(rn) > 45, paste0(substr(rn, 1, 42), "..."), rn)
+  dfh <- data.frame(
+    Contig = factor(rep(rn_short, times = ncol(mt)), levels = rev(rn_short)),
+    Sample = rep(colnames(mt) %||% paste0("S", seq_len(ncol(mt))), each = nrow(mt)),
+    Value = as.vector(mt)
+  )
+  ## A ggplot tile map works for any shape. Base heatmap() clusters rows and
+  ## columns and therefore fails outright on matrices with fewer than two rows
+  ## or two columns, which is exactly the shape a small viral dataset has.
+  ggplot(dfh, aes(x = Sample, y = Contig, fill = log1p(Value))) +
+    geom_tile(colour = "white", linewidth = 0.3) +
+    scale_fill_gradient(low = "#F7FBFF", high = "#08519C", name = "log(1 + value)") +
+    theme_minimal(base_size = 9) +
+    labs(title = sprintf("Top %d contigs by mean %s", top_n, main_assay),
+         subtitle = sprintf("%s%s", describe_assay(main_assay),
+                            if (masking_applied)
+                              sprintf("; masked at covered fraction >= %s", format(covfrac_threshold))
+                            else "; unmasked"),
+         x = NULL, y = NULL) +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 }
 ```
 
-## Abundance Overview
-
-```{r abundance-heatmap, fig.width=10, fig.height=8}
-mat <- assay(tse, "counts")
-top_n <- min(30, nrow(mat))
-top_idx <- order(rowMeans(mat), decreasing = TRUE)[1:top_n]
-mat_top <- mat[top_idx, , drop = FALSE]
-# Simple heatmap using base R image
-heatmap(as.matrix(mat_top), scale = "row", main = "Top 30 Contigs by Abundance (row-scaled)",
-        margins = c(8, 12), cexCol = 0.8, cexRow = 0.6)
+```{r abundance-note, output='asis'}
+if (!has_ab) note("No abundance assay is available, so no abundance overview is shown.")
 ```
 
-## Gene Annotations
+## Gene annotations
 
-```{r gene-annotations}
+```{r gene-annotations, output='asis'}
 ga <- S4Vectors::metadata(tse)$gene_annotations
-if (!is.null(ga) && nrow(ga) > 0) {
-  cat(sprintf("- **Total genes annotated**: %d\n", nrow(ga)))
+if (is.null(ga) || !is.data.frame(as.data.frame(ga)) || nrow(as.data.frame(ga)) == 0L) {
+  note(
+    "No gene annotations are stored in `metadata(tse)$gene_annotations`. ",
+    "ViroProfiler writes them when the DRAM-v and Pharokka steps run; a viral-contig ",
+    "object built without those steps has none, which is not an error."
+  )
+} else {
+  ga <- as.data.frame(ga)
+  cat(sprintf("- **Genes annotated**: %s\n", format(nrow(ga), big.mark = ",")))
+  blank <- function(x) is.na(x) | !nzchar(as.character(x)) | as.character(x) == "NA"
   if ("dramv_category" %in% colnames(ga)) {
-    cat(sprintf("- **AMG genes**: %d\n", sum(ga$dramv_category == "AMG", na.rm = TRUE)))
-    cat(sprintf("- **Viral genes**: %d\n", sum(ga$dramv_category == "viral", na.rm = TRUE)))
+    cat(sprintf("- **AMG genes**: %s\n",
+                format(sum(ga$dramv_category == "AMG", na.rm = TRUE), big.mark = ",")))
+    cat(sprintf("- **Viral genes**: %s\n",
+                format(sum(ga$dramv_category == "viral", na.rm = TRUE), big.mark = ",")))
   }
   if ("pharokka_card" %in% colnames(ga)) {
-    n_card <- sum(!is.na(ga$pharokka_card) & ga$pharokka_card != "NA")
-    cat(sprintf("- **CARD hits (antibiotic resistance)**: %d\n", n_card))
+    cat(sprintf("- **CARD hits (antibiotic resistance)**: %s\n",
+                format(sum(!blank(ga$pharokka_card)), big.mark = ",")))
   }
   if ("pharokka_vfdb" %in% colnames(ga)) {
-    n_vfdb <- sum(!is.na(ga$pharokka_vfdb) & ga$pharokka_vfdb != "NA")
-    cat(sprintf("- **VFDB hits (virulence factors)**: %d\n", n_vfdb))
+    cat(sprintf("- **VFDB hits (virulence factors)**: %s\n",
+                format(sum(!blank(ga$pharokka_vfdb)), big.mark = ",")))
   }
-} else {
-  cat("No gene annotations available.")
 }
 ```
 
----
+## Session
 
-*Generated by vpfkit v`r utils::packageVersion("vpfkit")`*
+```{r session, output='asis'}
+cat(sprintf("- **Report generated**: %s\n", format(Sys.time(), "%Y-%m-%d %H:%M:%S %Z")))
+cat(sprintf("- **R version**: %s\n", R.version.string))
+v <- tryCatch(as.character(utils::packageVersion("vpfkit")), error = function(e) NA_character_)
+cat(sprintf("- **vpfkit version**: %s\n", if (is.na(v)) "not installed (rendered from source)" else v))
+```

@@ -2,20 +2,61 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{abundance_adjust_by_covfrac}
 \alias{abundance_adjust_by_covfrac}
-\title{Adjust abundance table by coverage fraction table}
+\title{Adjust an abundance table by a coverage fraction table}
 \usage{
-abundance_adjust_by_covfrac(df_abundance, df_covfrac, covfrac_threshold = 0.5)
+abundance_adjust_by_covfrac(
+  df_abundance,
+  df_covfrac,
+  covfrac_threshold = 0.75,
+  renormalize = FALSE
+)
 }
 \arguments{
-\item{df_abundance}{assay(tse, "counts") table}
+\item{df_abundance}{An abundance table, ideally raw counts, e.g.
+`assay(tse, "counts")`}
 
-\item{df_covfrac}{assay(tse, "covfrac") table}
+\item{df_covfrac}{The matching coverage fraction table, e.g.
+`assay(tse, "covfrac")`}
 
-\item{covfrac_threshold}{minimum covfrac (default: 0.5)}
+\item{covfrac_threshold}{Minimum covered fraction to retain a value
+(default 0.75; see the section above)}
+
+\item{renormalize}{Rescale every column to its pre-masking total. Use this
+only when `df_abundance` is already normalized (TPM, relative abundance) and
+raw counts are unavailable.}
 }
 \value{
 matrix
 }
 \description{
-Adjust abundance table by coverage fraction table
+Zeroes every entry whose contig was covered over less than `covfrac_threshold`
+of its length in that sample. Presence/absence in a virome is decided by
+breadth of coverage rather than by depth, because a handful of reads piled on
+one conserved region will otherwise be read as a present genome.
 }
+\section{Choice of threshold}{
+
+The default is 0.75, following Roux et al. (2017, *PeerJ* 5:e3817,
+\doi{10.7717/peerj.3817}), whose simulations show that requiring at least 75%
+of the contig covered at 1x, together with a strict identity cutoff,
+suppresses false positives at a small cost in sensitivity. ViroProfiler runs
+CoverM with `--min-read-percent-identity 0.95`, which is stricter than the
+90% used there. MetaPop applies 70% (Gregory et al. 2022,
+\doi{10.1186/s40168-022-01231-0}). The ViroProfiler paper (Ru et al. 2023,
+*Gut Microbes* 15:2192522, \doi{10.1080/19490976.2023.2192522}) used 0.5,
+which was this function's previous default; raising it changes results, so
+pass `covfrac_threshold = 0.5` to reproduce earlier analyses. CoverM's own
+default minimum covered fraction is 0, a software default rather than a
+biological recommendation.
+}
+
+\section{Order of operations}{
+
+Mask first, normalize second. Zeroing cells of an already-normalized matrix
+leaves each column summing to something less than its original total, and by
+a different amount in every sample, so the resulting compositions are not
+comparable across samples. Apply this function to raw counts and derive
+TPM or relative abundance afterwards, or pass `renormalize = TRUE` to rescale
+each column back to its original total after masking.
+}
+

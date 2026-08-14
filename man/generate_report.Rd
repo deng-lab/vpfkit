@@ -4,19 +4,53 @@
 \alias{generate_report}
 \title{Generate a ViroProfiler quality report}
 \usage{
-generate_report(tse, output_file, quiet = TRUE)
+generate_report(
+  tse,
+  output_file,
+  covfrac_threshold = NULL,
+  assay.type = "counts",
+  title = "ViroProfiler Quality Report",
+  quiet = TRUE
+)
 }
 \arguments{
-\item{tse}{TreeSummarizedExperiment object}
+\item{tse}{A `SummarizedExperiment` (usually a `TreeSummarizedExperiment`).}
 
-\item{output_file}{Output HTML file path}
+\item{output_file}{Output HTML file path. The parent directory is created
+when missing. Relative paths are resolved against the current working
+directory before rendering starts.}
 
-\item{quiet}{Suppress Quarto output (default: TRUE)}
+\item{covfrac_threshold}{Optional minimum covered fraction used to mask
+abundances before the report computes anything from them. `NULL` (the
+default) leaves the assays exactly as stored and the report says so.
+When set, masking is applied to raw counts *before* normalization and the
+threshold is echoed in the report.}
+
+\item{assay.type}{Assay used for the abundance and diversity sections.
+Legacy assay names are resolved automatically.}
+
+\item{title}{Report title.}
+
+\item{quiet}{Suppress Quarto's progress output (default `TRUE`).}
 }
 \value{
-Invisible path to the generated report
+The path of the report that was written, invisibly.
 }
 \description{
-Renders a Quarto HTML report summarizing the contents of a TSE object,
-including quality metrics, taxonomy, diversity, and gene annotations.
+Renders a self-contained HTML report summarizing the contents of a TSE
+object: dataset composition, CheckV quality, taxonomy, coverage breadth,
+diversity, abundance and gene annotations. Every section degrades to an
+explanatory note when the data it needs is absent, so a minimal object
+still produces a complete report rather than a render failure.
+}
+\details{
+The report is rendered in a private staging directory and only then copied
+to `output_file`, so no intermediate file is ever written next to the
+caller's data and two concurrent calls cannot overwrite each other.
+}
+\examples{
+\dontrun{
+generate_report(tse, "reports/viroprofiler_report.html")
+generate_report(tse, "reports/masked.html", covfrac_threshold = 0.75)
+}
 }

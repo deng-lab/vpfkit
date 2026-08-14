@@ -2,18 +2,18 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_vcontact2_simple}
 \alias{read_vcontact2_simple}
-\title{Read vConTACT2 results and return as one data.frame}
+\title{Read vConTACT2 results and return one data.frame}
 \usage{
 read_vcontact2_simple(fin, assembler_label = "_NODE_")
 }
 \arguments{
 \item{fin}{File `genome_by_genome_overview.csv` created by vConTACT2}
 
-\item{assembler_label}{"_NODE_" for SPAdes}
+\item{assembler_label}{`"_NODE_"` for SPAdes}
 }
 \value{
 data.frame
 }
 \description{
-Read vConTACT2 results and return as one data.frame
+Read vConTACT2 results and return one data.frame
 }

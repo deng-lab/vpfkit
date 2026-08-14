@@ -9,13 +9,15 @@ read_vcontact2(fin, assembler_label = "_NODE_", version = "auto")
 \arguments{
 \item{fin}{File `genome_by_genome_overview.csv` created by vConTACT2}
 
-\item{assembler_label}{"_NODE_" for SPAdes}
+\item{assembler_label}{`"_NODE_"` for SPAdes}
 
-\item{version}{version of the tool used to annotate taxonomy}
+\item{version}{ViroProfiler version: `"auto"`, `"v1"` or `"v2"`}
 }
 \value{
 list of results
 }
 \description{
-Import vConTACT2 results
+vConTACT2 is not part of the current ViroProfiler pipeline, which uses
+vConTACT3 through `bin/merge_taxonomy.py`. This reader is kept for datasets
+produced by earlier versions and has not been re-tested against real output.
 }

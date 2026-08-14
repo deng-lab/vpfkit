@@ -9,6 +9,8 @@ run_app(
   options = list(),
   enableBookmarking = NULL,
   uiPattern = "/",
+  max_upload_mb = NULL,
+  allow_server_path = NULL,
   ...
 )
 }
@@ -33,9 +35,24 @@ request to determine whether the \code{ui} should be used to handle the
 request. Note that the entire request path must match the regular
 expression in order for the match to be considered successful.}
 
+\item{max_upload_mb}{Largest file the app will accept through its upload
+controls, in megabytes. Shiny's own default is 5 MB, which is smaller than
+many real result objects. The `VPFKIT_MAX_UPLOAD_MB` environment variable
+overrides the default when the argument is left at `NULL`. Note that a
+reverse proxy in front of the app can reject a large request before Shiny
+ever sees it.}
+
+\item{allow_server_path}{Whether the app may load a dataset from a path on
+the host. Convenient locally, unsafe on a public deployment, so it
+defaults to `TRUE` only outside production.}
+
 \item{...}{arguments to pass to golem_opts.
 See `?golem::get_golem_options` for more details.}
 }
+\value{
+A Shiny application object.
+}
 \description{
-Run the Shiny Application
+Starts ViroProfiler-viewer, an interactive viewer for the
+`TreeSummarizedExperiment` objects produced by the ViroProfiler pipeline.
 }

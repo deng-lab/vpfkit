@@ -1,9 +1,9 @@
-fasta	scaffold	gene_position	start_position	end_position	strandedness	rank	ko_id	kegg_hit	pfam_hits	vogdb	auxiliary_score	amg_flags
-ctg001_1	ctg001	1	100	900	1	A	K00001	alcohol dehydrogenase	PF00107.28	VOG00001	1	M
-ctg001_2	ctg001	2	1000	1800	1	A	K00002	glycerol dehydrogenase	PF00106.27	VOG00002	2	MKE
-ctg001_3	ctg001	3	2000	2700	-1	V	NA	NA	NA	VOG00010	NA	NA
-ctg002_1	ctg002	1	100	800	1	A	K01810	glucose-6-phosphate isomerase	PF00342.20	NA	1	M
-ctg002_2	ctg002	2	900	1600	-1	V	NA	NA	PF03796.15	VOG00005	NA	NA
-ctg004_1	ctg004	1	100	1200	1	A	K00161	pyruvate dehydrogenase	PF00676.21	VOG00008	1	M
-ctg004_2	ctg004	2	1300	2000	1	H	NA	NA	NA	NA	NA	NA
-ctg004_3	ctg004	3	2100	2800	-1	V	NA	NA	PF01391.18	VOG00012	NA	NA
+	fasta	scaffold	gene_position	start_position	end_position	strandedness	rank	ko_id	kegg_hit	pfam_hits	vogdb_id	vogdb_hits	vogdb_categories	virsorter_category	auxiliary_score	amg_flags
+ctg001-cat_1_1	final-viral-combined-for-dramv	ctg001-cat_1	1	100	900	1	A	K00001	alcohol dehydrogenase	PF00107.28	VOG00001	dehydrogenase	Xu	1	1	M
+ctg001-cat_1_2	final-viral-combined-for-dramv	ctg001-cat_1	2	1000	1800	1	A	K00002	glycerol dehydrogenase	PF00106.27	VOG00002	dehydrogenase	Xu	1	2	MKE
+ctg001-cat_1_3	final-viral-combined-for-dramv	ctg001-cat_1	3	2000	2700	-1	V	NA	NA	NA	VOG00010	tail protein	Xr	1	NA	NA
+ctg002-cat_2_1	final-viral-combined-for-dramv	ctg002-cat_2	1	100	800	1	A	K01810	glucose-6-phosphate isomerase	PF00342.20	NA	NA	NA	2	1	M
+ctg002-cat_2_2	final-viral-combined-for-dramv	ctg002-cat_2	2	900	1600	-1	V	NA	NA	PF03796.15	VOG00005	capsid protein	Xr	2	NA	NA
+ctg004-cat_1_1	final-viral-combined-for-dramv	ctg004-cat_1	1	100	1200	1	A	K00161	pyruvate dehydrogenase	PF00676.21	VOG00008	dehydrogenase	Xu	1	1	M
+ctg004-cat_1_2	final-viral-combined-for-dramv	ctg004-cat_1	2	1300	2000	1	H	NA	NA	NA	NA	NA	NA	1	NA	NA
+ctg004-cat_1_3	final-viral-combined-for-dramv	ctg004-cat_1	3	2100	2800	-1	V	NA	NA	PF01391.18	VOG00012	portal protein	Xr	1	NA	NA

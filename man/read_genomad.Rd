@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_genomad}
 \alias{read_genomad}
-\title{Read geNomad virus summary}
+\title{Read a geNomad virus summary}
 \usage{
 read_genomad(fin)
 }
@@ -10,8 +10,16 @@ read_genomad(fin)
 \item{fin}{geNomad virus summary TSV file}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Read geNomad virus summary
+Reads `*_virus_summary.tsv`. `fdr` is only computed when geNomad runs with
+score calibration enabled and is otherwise written as `NA` in every row, which
+makes the column read as logical; it is coerced to numeric so that the rowData
+schema does not change between runs.
+}
+\details{
+geNomad names an excised provirus `<contig>|provirus_N`; the decoration is
+stripped so that the row joins to its host contig, and the untouched name is
+kept in `genomad_seq_name`.
 }

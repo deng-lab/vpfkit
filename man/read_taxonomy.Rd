@@ -2,20 +2,22 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_taxonomy}
 \alias{read_taxonomy}
-\title{Read taxonomy table}
+\title{Read an MMseqs2 taxonomy table}
 \usage{
 read_taxonomy(fin, tool = "mmseqs", version = "auto")
 }
 \arguments{
-\item{fin}{taxonomy annotation file}
+\item{fin}{Taxonomy annotation file}
 
-\item{tool}{tool used to annotate taxonomy}
+\item{tool}{`"mmseqs"` or `"mmseq_ictv"`}
 
-\item{version}{version of the tool used to annotate taxonomy}
+\item{version}{ViroProfiler version: `"auto"`, `"v1"` or `"v2"`}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Read taxonomy table
+MMseqs2 taxonomy was retired from ViroProfiler; taxonomy now comes from
+VITAP and vConTACT3, merged by `bin/merge_taxonomy.py`, and is read by
+[read_taxonomy2()]. This reader is kept for datasets produced earlier.
 }

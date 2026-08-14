@@ -6,15 +6,26 @@
 #' @noRd
 app_ui <- function(request) {
   tagList(
-    # Leave this function for adding external resources
     golem_add_external_resources(),
-    # Your application UI logic
-    navbarPage("ViroProfiler-viewer",
-               tabPanel("Home", mod_vpfilter_ui("vpfilter_1")),
-               # tabPanel("Home", mod_vpfvtest_ui("vpfvtest_1")),
-               # tabPanel("Genome Browser", fluidPage(mod_jb2_ui("jb"))),
-               # tabPanel("Tutorial", fixedPage(withMathJax(includeMarkdown("inst/app/www/tutorial.md")), hr(), div(class="footer", includeHTML("inst/app/www/footer.html")))),
-               theme = shinythemes::shinytheme("flatly"))
+    navbarPage(
+      title = "ViroProfiler-viewer",
+      id = "main_nav",
+      theme = shinythemes::shinytheme("flatly"),
+      header = div(
+        class = "vpf-statusbar",
+        textOutput("status_bar", inline = TRUE)
+      ),
+      tabPanel("Data", mod_data_input_ui("data")),
+      tabPanel("Filter", mod_vpfilter_ui("filter")),
+      tabPanel("Taxonomy", mod_composition_ui("composition")),
+      tabPanel("Diversity", mod_diversity_ui("diversity")),
+      tabPanel("Contigs", mod_features_ui("features")),
+      tabPanel("Host & lifestyle", mod_host_ui("host")),
+      tabPanel("Genes", mod_genes_ui("genes")),
+      tabPanel("Compare", mod_compare_ui("compare")),
+      tabPanel("Export", mod_export_ui("export")),
+      tabPanel("About", mod_about_ui("about"))
+    )
   )
 }
 
@@ -36,9 +47,7 @@ golem_add_external_resources <- function() {
     favicon(),
     bundle_resources(
       path = app_sys("app/www"),
-      app_title = "vpfkit"
+      app_title = "ViroProfiler-viewer"
     )
-    # Add here other external resources
-    # for example, you can add shinyalert::useShinyalert()
   )
 }

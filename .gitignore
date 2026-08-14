@@ -1,8 +1,11 @@
 *.Rproj
 .shiny_dev.log
 .shiny_dev.pid
+# Scratch data directories. The package's own data/ and data-raw/ are tracked:
+# a bare `data*/` also matches them, so both are re-included here.
 data*/
-!data-raw/test_viroprofiler.rds
+!/data/
+!/data-raw/
 workflow/data
 .Rdata
 /doc/
@@ -10,10 +13,15 @@ inst/doc
 /Meta/
 tmp
 test
+# Rendered and scratch documents. Sources that ship with the package are re-included:
+# an unanchored `*.html` would otherwise swallow the Shiny app's own www/ assets.
 *.qmd
 !inst/**/*.qmd
+!vignettes/**/*.qmd
 *.RData
 *.html
+!inst/**/*.html
+Rplots.pdf
 # History files
 .Rhistory
 .Rapp.history

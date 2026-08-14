@@ -1,5 +1,0 @@
-contig_id	taxa_id	Domain	Kingdom	Phylum	Class	Order	Family	Genus	Species
-ctg001	10239	Viruses	Duplodnaviria	Uroviricota	Caudoviricetes	Caudovirales	Myoviridae	Tevenvirinae	Escherichia_phage_T4
-ctg002	10239	Viruses	Duplodnaviria	Uroviricota	Caudoviricetes	Caudovirales	Siphoviridae	Lambdavirus	Lambda_phage
-ctg004	10239	Viruses	Duplodnaviria	Uroviricota	Caudoviricetes	Caudovirales	Podoviridae	Lederbergvirus	Salmonella_phage_P22
-ctg005	0	NA	NA	NA	NA	NA	NA	NA	NA
