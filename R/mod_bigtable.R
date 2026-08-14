@@ -219,13 +219,13 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
         # In server-side mode sorting and paging are handled in R, so the
         # client-side controls are switched off to avoid sorting only the
         # visible page and presenting it as a sort of the whole table.
-        sortable = !server_mode(),
-        searchable = !server_mode(),
+        sortable = FALSE,
+        searchable = FALSE,
         pagination = !server_mode(),
         defaultPageSize = page_size(),
         striped = TRUE, highlight = TRUE, bordered = TRUE,
         resizable = TRUE, wrap = FALSE, compact = TRUE,
-        showPageSizeOptions = !server_mode(),
+        showPageSizeOptions = FALSE,
         pageSizeOptions = c(10, 25, 50, 100, 250),
         defaultColDef = reactable::colDef(minWidth = 110)
       )
