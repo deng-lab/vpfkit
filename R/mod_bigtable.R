@@ -123,7 +123,7 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
         for (nm in cols) {
           v <- as.character(df[[nm]])
           v[is.na(v)] <- ""
-          hit <- hit | grepl(pattern, v, ignore.case = TRUE, fixed = FALSE)
+          hit <- hit | grepl(pattern, v, ignore.case = TRUE, fixed = TRUE)
         }
         df <- df[hit, , drop = FALSE]
       }
