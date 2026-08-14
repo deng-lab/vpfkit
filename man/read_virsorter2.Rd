@@ -7,11 +7,21 @@
 read_virsorter2(fin)
 }
 \arguments{
-\item{fin}{VirSorter2 results}
+\item{fin}{VirSorter2 `final-viral-score.tsv`}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Add "virsorter2_" prefix to column names.
+Reads `final-viral-score.tsv`. Column names are prefixed with `virsorter2_`.
+}
+\details{
+The per-group score columns vary with `--include-groups`, so only `seqname`,
+`max_score` and `max_score_group` are required. ViroProfiler runs VirSorter2
+with `--seqname-suffix-off`, so `seqname` carries no `||full` decoration; the
+decoration is stripped anyway for output produced without that flag.
+
+In ViroProfiler, VirSorter2 runs on contigs that were already selected as
+putative viruses, in order to produce the DRAM-v input. It is not an
+independent detector.
 }

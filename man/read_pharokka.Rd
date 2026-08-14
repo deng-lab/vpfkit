@@ -13,5 +13,7 @@ read_pharokka(fin)
 data.frame with gene-level annotations
 }
 \description{
-Read pharokka functional annotations
+pharokka is not part of the current ViroProfiler pipeline; this reader is kept
+for externally produced annotations and has not been re-tested against real
+output.
 }

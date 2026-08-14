@@ -2,20 +2,29 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_coverm}
 \alias{read_coverm}
-\title{Read CoverM output file}
+\title{Read a CoverM abundance table}
 \usage{
-read_coverm(fpath, fbin2contig = 0, cov = 0)
+read_coverm(fpath, fbin2contig = 0, cov = 0, sample_rename = NULL)
 }
 \arguments{
-\item{fpath}{CoverM output file name}
+\item{fpath}{CoverM output file}
 
-\item{fbin2contig}{Contig binning to contig mapping}
+\item{fbin2contig}{Optional two-column bin-to-contig mapping (no header). Rows
+are summed per bin, or maximized when `cov` is set. Pass `NULL` or `0` to
+skip.}
 
-\item{cov}{Coverage fraction file or not}
+\item{cov}{Set to a non-zero value when the table is a coverage fraction, so
+that bins take the maximum rather than the sum of their contigs}
+
+\item{sample_rename}{Optional named character vector of
+`pattern = replacement` applied to sample column names. Renaming samples is
+off by default: earlier versions rewrote any column matching `ds10Ms` to
+`Sample_`, which silently renamed samples in unrelated datasets.}
 }
 \value{
-A dataframe
+data.frame with contigs as rownames
 }
 \description{
-Read CoverM output file
+Reads one of the `abundance_contigs_*.tsv.gz` tables. The first column holds
+contig identifiers; every other column is one sample.
 }

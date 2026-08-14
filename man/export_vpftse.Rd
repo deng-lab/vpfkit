@@ -7,13 +7,18 @@
 export_vpftse(tse, file)
 }
 \arguments{
-\item{tse}{TreeSummarizedExperiment object}
+\item{tse}{A `SummarizedExperiment` (usually a `TreeSummarizedExperiment`).}
 
-\item{file}{Output file path}
+\item{file}{Output file path. The parent directory is created when missing.}
 }
 \value{
-Invisible NULL
+The path written, invisibly.
 }
 \description{
 Export a TSE object to RDS
+}
+\examples{
+\dontrun{
+export_vpftse(tse, "results/viroprofiler_output.rds")
+}
 }

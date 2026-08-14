@@ -2,16 +2,29 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{create_vpftse_vir}
 \alias{create_vpftse_vir}
-\title{Create TSE virome object}
+\title{Create a TSE virome object}
 \usage{
-create_vpftse_vir(tse)
+create_vpftse_vir(tse, rule = c("vote", "candidate"), reannotate = FALSE, ...)
 }
 \arguments{
 \item{tse}{TSE object}
+
+\item{rule}{`"vote"` (default) or `"candidate"`}
+
+\item{reannotate}{Recompute the votes even if the object already carries them}
+
+\item{...}{Passed to [annotate_viral_votes()], e.g. `genomad_min_score`}
 }
 \value{
 TreeSummarizedExperiment object
 }
 \description{
-Create TSE virome object
+Subsets a TSE built by [create_vpftse()] down to the contigs judged viral.
+The judgement itself, and the record of which evidence produced it, come from
+[annotate_viral_votes()]; see there for the rule, its thresholds and their
+limitations.
+}
+\details{
+A TSE that has already been annotated keeps its existing `viral_selected`
+column unless `reannotate = TRUE`.
 }

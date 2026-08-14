@@ -2,7 +2,7 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{create_vpftse}
 \alias{create_vpftse}
-\title{Create TSE object}
+\title{Create a ViroProfiler TSE object}
 \usage{
 create_vpftse(
   fin_abcount,
@@ -12,53 +12,111 @@ create_vpftse(
   fin_taxa,
   fin_checkv,
   fin_virsorter2,
-  fin_vibrant,
-  fin_dvf,
+  fin_vibrant = NULL,
+  fin_dvf = NULL,
   fin_replicyc,
   df_metadata = NULL,
   fin_genomad = NULL,
   fin_vrhyme = NULL,
   fin_phist = NULL,
   fin_dramv = NULL,
-  fin_pharokka = NULL
+  fin_pharokka = NULL,
+  fin_checkamg = NULL,
+  fin_iphop = NULL,
+  fin_metadata = NULL,
+  fin_coverm_log = NULL,
+  fin_vircontigs = NULL,
+  pipeline_info = NULL
 )
 }
 \arguments{
-\item{fin_abcount}{File `abundance_contigs_count.tsv.gz` created by coverm}
+\item{fin_abcount}{File `abundance_contigs_count.tsv.gz` created by CoverM}
 
-\item{fin_abtpm}{File `abundance_contigs_tpm.tsv.gz` created by coverm}
+\item{fin_abtpm}{File `abundance_contigs_tpm.tsv.gz` created by CoverM}
 
-\item{fin_abtmm}{File `abundance_contigs_tmm.tsv.gz` created by coverm}
+\item{fin_abtmm}{File `abundance_contigs_trimmed_mean.tsv.gz` created by
+CoverM. The argument keeps its historical name; the assay it fills is called
+`trimmed_mean`.}
 
-\item{fin_abcov}{File `abundance_contigs_covfrac.tsv.gz` created by coverm}
+\item{fin_abcov}{File `abundance_contigs_covered_fraction.tsv.gz` created by
+CoverM}
 
-\item{fin_taxa}{File `taxa_mmseqs_formatted_all.tsv` created by coverm}
+\item{fin_taxa}{File `taxonomy_tse.tsv` created by `bin/merge_taxonomy.py`}
 
-\item{fin_checkv}{File `quality_summary.tsv` created by checkv}
+\item{fin_checkv}{File `quality_summary.tsv` created by CheckV}
 
 \item{fin_virsorter2}{File `final-viral-score.tsv` created by VirSorter2}
 
-\item{fin_vibrant}{File `VIBRANT_genome_quality_contigs.tsv` created by VIBRANT}
+\item{fin_vibrant}{File `VIBRANT_genome_quality_contigs.tsv` created by
+VIBRANT (optional; VIBRANT is switchable with `--use_vibrant`)}
 
-\item{fin_dvf}{File `dvf_virus.tsv.tsv` created by DVF}
+\item{fin_dvf}{File `dvf_virus.tsv` created by DeepVirFinder (optional;
+DeepVirFinder is no longer part of the pipeline)}
 
-\item{fin_replicyc}{File `putative_vcontigs_pref1.fasta.bacphlip` created by Replicyc}
+\item{fin_replicyc}{File `*.bacphlip` created by BACPHLIP}
 
-\item{df_metadata}{Metadata table as data.frame}
+\item{df_metadata}{Sample metadata as a data.frame (optional)}
 
-\item{fin_genomad}{geNomad virus summary TSV (optional, NULL to skip)}
+\item{fin_genomad}{geNomad virus summary TSV (optional)}
 
-\item{fin_vrhyme}{vRhyme bin-to-contig mapping (optional, NULL to skip)}
+\item{fin_vrhyme}{vRhyme bin membership file (optional)}
 
-\item{fin_phist}{PHIST host predictions TSV (optional, NULL to skip)}
+\item{fin_phist}{PHIST host predictions (optional)}
 
-\item{fin_dramv}{DRAM-v annotations TSV (optional, NULL to skip)}
+\item{fin_dramv}{DRAM-v `annotations.tsv` (optional)}
 
-\item{fin_pharokka}{pharokka CDS output TSV (optional, NULL to skip)}
+\item{fin_pharokka}{pharokka CDS output TSV (optional)}
+
+\item{fin_checkamg}{CheckAMG `final_results.tsv`, or the `checkamg_results`
+directory (optional)}
+
+\item{fin_iphop}{iPHoP `Host_prediction_to_genus_mXX.csv` (optional)}
+
+\item{fin_metadata}{Sample metadata file, CSV/TSV/XLSX (optional). Samples are
+matched by name against the abundance table columns; unmatched names are
+reported rather than dropped silently. Mutually exclusive with
+`df_metadata`.}
+
+\item{fin_coverm_log}{A CoverM log such as `abundance/log_contig_count.txt`
+(optional). Adds `n_reads_total`, `n_reads_mapped` and `mapping_rate` to
+colData.}
+
+\item{fin_vircontigs}{The putative viral contig list written by
+`VIRCONTIGS_PRE`, e.g. `vircontigs/putative_vcontigs_pref1.list` (optional).
+Adds the logical rowData column `upstream_viral_candidate`, which records
+exactly which contigs the pipeline itself selected as putative viruses.}
+
+\item{pipeline_info}{Named list of pipeline provenance (versions, parameters)
+stored in `metadata(tse)$viroprofiler$pipeline` (optional)}
 }
 \value{
 TreeSummarizedExperiment object
 }
 \description{
-Create TSE object
+Assembles the abundance matrices and every per-contig annotation table into a
+`TreeSummarizedExperiment` over all assembled contigs.
 }
+\section{Assays}{
+
+Four assays are written, all produced by CoverM from the same BAM files:
+\describe{
+  \item{`counts`}{Reads mapped per contig (`--methods count`).}
+  \item{`tpm`}{Transcripts per million (`--methods tpm`).}
+  \item{`trimmed_mean`}{Trimmed mean of per-base coverage depth
+    (`--methods trimmed_mean`), in fold coverage. This is not edgeR's TMM
+    normalization; objects written before vpfkit 0.6 stored it as `tmm`, and
+    [normalize_assay_names()] renames it when such an object is read.}
+  \item{`covfrac`}{Covered fraction of the contig (`--methods
+    covered_fraction`), in [0, 1].}
+}
+}
+
+\section{Metadata}{
+
+`metadata(tse)$gene_annotations` holds the gene-level tables from DRAM-v,
+pharokka and CheckAMG stacked into one data.frame with a `source` column;
+`metadata(tse)$gene_annotations_by_tool` keeps them separate.
+`metadata(tse)$viroprofiler` records the vpfkit version, the time the object
+was built, the source file of every input, and the per-tool join match rates.
+}
+

@@ -1,6 +1,6 @@
 Package: vpfkit
 Title: Analyzing ViroProfiler results
-Version: 0.5.0
+Version: 0.6.0
 Authors@R: 
     person("Jinlong", "Ru", , "jinlong.ru@gmail.com", role = c("cre", "aut"),
            comment = c(ORCID = "0000-0002-6757-6018"))
@@ -9,48 +9,57 @@ License: GPL (>= 3) + file LICENSE
 URL: https://github.com/deng-lab/vpfkit
 BugReports: https://github.com/deng-lab/vpfkit/issues
 Depends: 
-    R (>= 2.10)
+    R (>= 4.2)
 Imports:
     config,
     data.table,
     dplyr,
-    fontawesome,
     ggplot2,
     ggrepel,
     golem,
-    htmltools,
+    grDevices,
+    here,
     magrittr,
+    methods,
     mia,
-    miaViz,
     MultiAssayExperiment,
     openxlsx,
     plotly,
+    R.utils,
     reactable,
     rlang,
     S4Vectors,
     scater,
-    SingleCellExperiment,
-    SummarizedExperiment,
     shiny,
     shinythemes,
+    SingleCellExperiment,
+    stats,
     stringr,
+    SummarizedExperiment,
     tibble,
     tidyr,
+    tools,
     TreeSummarizedExperiment,
+    utils,
     vegan
 Suggests:
+    callr,
+    chromote,
+    commonmark,
+    IRanges,
     knitr,
+    markdown,
+    pkgload,
     quarto,
     rmarkdown,
+    shinytest2,
     testthat (>= 3.0.0),
     withr
-remotes: 
-    YuLab-SMU/ggtree
 VignetteBuilder: 
     knitr
-biocViews: scater, mia, miaViz, SummarizedExperiment,
-    SingleCellExperiment, TreeSummarizedExperiment, ggtree
+biocViews: Software, Metagenomics, Sequencing, Microbiome,
+    Visualization, ShinyApps
 Config/testthat/edition: 3
 Encoding: UTF-8
 Language: en-US
-RoxygenNote: 7.3.3
+Config/roxygen2/version: 8.0.0

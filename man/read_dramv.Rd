@@ -7,11 +7,26 @@
 read_dramv(fin)
 }
 \arguments{
-\item{fin}{DRAM-v annotations.tsv file}
+\item{fin}{DRAM-v `annotations.tsv`}
 }
 \value{
 data.frame with gene-level annotations
 }
 \description{
-Read DRAM-v annotations
+Reads `dramv-annotate/annotations.tsv`. DRAM-v writes the gene identifier in
+an unnamed first column, which `data.table::fread()` names `V1`; the separate
+`fasta` column holds the stem of the input FASTA name — the same value on
+every row, normally `final-viral-combined-for-dramv` — and `scaffold` holds
+the sequence the gene was called on. Earlier versions of this reader used
+`fasta` as the gene identifier, which gave every gene the same ID.
+}
+\details{
+The column block written for each database is conditional on how DRAM was
+configured, so columns are located by name and the optional ones are filled
+with `NA` when absent.
+
+DRAM-v is run on the VirSorter2 `--prep-for-dramv` FASTA, whose names carry a
+`-cat_N` suffix and, unless VirSorter2 ran with `--seqname-suffix-off`, a
+`__full` / `__<i>_partial` / `__lt2gene` token as well. Both are stripped so
+that `Contig` joins to the assembled contig.
 }

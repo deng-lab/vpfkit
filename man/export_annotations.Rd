@@ -2,20 +2,27 @@
 % Please edit documentation in R/fct_export.R
 \name{export_annotations}
 \alias{export_annotations}
-\title{Export contig annotations from TSE}
+\title{Export contig annotations from a TSE object}
 \usage{
 export_annotations(tse, file, format = c("tsv", "csv"))
 }
 \arguments{
-\item{tse}{TreeSummarizedExperiment object}
+\item{tse}{A `SummarizedExperiment`.}
 
-\item{file}{Output file path}
+\item{file}{Output file path. The parent directory is created when missing.}
 
-\item{format}{Output format: "tsv" or "csv"}
+\item{format}{Output format, `"tsv"` or `"csv"`.}
 }
 \value{
-Invisible NULL
+The path written, invisibly.
 }
 \description{
-Export contig annotations from TSE
+Writes `rowData()` with the contig identifiers in a leading `Contig` column.
+Multi-valued columns (`List`, list, nested `DataFrame`) are collapsed with
+`;` so that they survive a flat text format.
+}
+\examples{
+\dontrun{
+export_annotations(tse, "contig_annotations.tsv")
+}
 }

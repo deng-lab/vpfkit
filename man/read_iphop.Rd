@@ -2,16 +2,24 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_iphop}
 \alias{read_iphop}
-\title{Read iphop results}
+\title{Read iPHoP host predictions}
 \usage{
 read_iphop(fin)
 }
 \arguments{
-\item{fin}{iphop genus prediction}
+\item{fin}{iPHoP genus prediction file}
 }
 \value{
-data.frame
+data.frame with a `Contig` column
 }
 \description{
-Read iphop results
+Reads `Host_prediction_to_genus_mXX.csv`. The file is comma separated and its
+header uses spaces (`AAI to closest reference`, `Host genus`,
+`Confidence score`, `List of methods`); `data.table::fread()` detects the
+separator, and the columns are matched by name with a positional fallback.
+}
+\details{
+iPHoP reports one row per candidate host genus, so a virus can appear several
+times. The row with the highest confidence score is retained and the number of
+candidates is kept in `iphop_n_predictions`.
 }

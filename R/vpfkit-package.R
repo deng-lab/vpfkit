@@ -37,3 +37,23 @@
 #' @importFrom tibble rownames_to_column
 ## usethis namespace: end
 NULL
+
+#' Dependencies that are real but invisible to `R CMD check`
+#'
+#' Two packages in `Imports` are never named by any R source file here, and
+#' would otherwise be reported as unused and eventually dropped:
+#'
+#' * `R.utils` is what `data.table::fread()` delegates gz decompression to.
+#'   Without it a clean installation cannot read a single one of ViroProfiler's
+#'   abundance tables, all of which are `.tsv.gz`.
+#' * `here` is evaluated by `inst/golem-config.yml`, which golem reads at
+#'   startup; the failure without it is `there is no package called 'here'`
+#'   from inside `golem::get_golem_options()`.
+#'
+#' @return `NULL`, invisibly. Never called.
+#' @noRd
+vpf_declared_but_uncalled_imports <- function() {
+  R.utils::gunzip
+  here::here
+  invisible(NULL)
+}
