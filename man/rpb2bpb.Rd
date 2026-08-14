@@ -2,18 +2,27 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{rpb2bpb}
 \alias{rpb2bpb}
-\title{Convert reads_per_base to base_per_base (depth)}
+\title{Convert reads per base to per-base depth}
 \usage{
 rpb2bpb(fin, reads_len = 150)
 }
 \arguments{
-\item{fin}{path of reads_per_base file}
+\item{fin}{Path of a CoverM `reads_per_base` table}
 
-\item{reads_len}{length of clean reads}
+\item{reads_len}{Mean length of the clean reads}
 }
 \value{
 matrix
 }
 \description{
-Convert reads_per_base to base_per_base (depth)
+CoverM's `reads_per_base` counts reads mapped per contig base; multiplying by
+the read length gives bases per base, that is, fold coverage.
+}
+\details{
+The conversion assumes every mapped read contributes exactly `reads_len`
+aligned bases, which it does not: fastp trims to variable lengths and the
+aligner soft-clips. Treat the result as an approximation, and pass the mean
+clean read length reported by fastp (`fastp/<sample>.fastp.json`, field
+`summary$after_filtering$read1_mean_length`) rather than relying on the
+default.
 }

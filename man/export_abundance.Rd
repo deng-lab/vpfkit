@@ -2,22 +2,45 @@
 % Please edit documentation in R/fct_export.R
 \name{export_abundance}
 \alias{export_abundance}
-\title{Export abundance matrix from TSE}
+\title{Export an abundance matrix from a TSE object}
 \usage{
-export_abundance(tse, file, assay.type = "counts", format = c("csv", "xlsx"))
+export_abundance(
+  tse,
+  file,
+  assay.type = "counts",
+  format = c("csv", "xlsx"),
+  sheet_name = NULL
+)
 }
 \arguments{
-\item{tse}{TreeSummarizedExperiment object}
+\item{tse}{A `SummarizedExperiment`.}
 
-\item{file}{Output file path}
+\item{file}{Output file path. The parent directory is created when missing.}
 
-\item{assay.type}{Which assay to export (default: "counts")}
+\item{assay.type}{Assay to export (default `"counts"`).}
 
-\item{format}{Output format: "csv" or "xlsx"}
+\item{format}{Output format, `"csv"` or `"xlsx"`.}
+
+\item{sheet_name}{Worksheet name for `format = "xlsx"`. Defaults to the
+assay name. Sanitized to Excel's rules (31 characters, no `[ ] : * ? / \`).}
 }
 \value{
-Invisible NULL
+The path written, invisibly.
 }
 \description{
-Export abundance matrix from TSE
+Writes one row per contig and one column per sample, with the contig
+identifiers in a leading `Contig` column so that they survive formats that
+have no concept of row names.
+}
+\details{
+Legacy assay names are resolved automatically: asking for `trimmed_mean`
+finds an assay stored under the older name `tmm`, and vice versa. Note that
+`tmm` here has always meant CoverM's trimmed mean of per-base coverage
+depth, not edgeR's Trimmed Mean of M-values.
+}
+\examples{
+\dontrun{
+export_abundance(tse, "abundance_counts.csv")
+export_abundance(tse, "abundance.xlsx", assay.type = "tpm", format = "xlsx")
+}
 }

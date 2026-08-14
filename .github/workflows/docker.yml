@@ -1,56 +1,76 @@
-name: DockerHub build and push
+name: Docker build and push
+
+# Builds the application image from docker/Dockerfile.
+#
+# On a tag push the image is built for linux/amd64 and linux/arm64 and pushed
+# to Docker Hub. On a pull request it is built for linux/amd64 only and not
+# pushed, so that a broken Dockerfile is caught before it is tagged.
+#
+# Requires the DOCKER_USER and DOCKER_PASSWORD repository secrets. Without
+# them the tag-push job cannot log in, so pushes are skipped rather than
+# failing the run.
 
 on:
   push:
     tags:
-      - 'd*'
       - 'v*'
+  pull_request:
+    paths:
+      - 'docker/**'
+      - 'DESCRIPTION'
+      - '.github/workflows/docker.yml'
+  workflow_dispatch:
 
 jobs:
   docker:
-
     runs-on: ubuntu-latest
-    timeout-minutes: 90
+    timeout-minutes: 180
 
-    strategy:
-      fail-fast: false
-      matrix:
-        include:
-          - dockerfile: ./docker/Dockerfile
-            image: denglab/viroprofiler-viewer
-    
     permissions:
       contents: read
-      packages: write
 
     steps:
-      # Check out code
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
 
-      # Docker Buildx
+      # QEMU is what makes the linux/arm64 leg possible on an amd64 runner.
+      # It is emulated and therefore slow; the timeout above accounts for it.
+      - name: Set up QEMU
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: docker/setup-qemu-action@v3
+
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
+        uses: docker/setup-buildx-action@v3
 
-      # DockerHub Login
-      - name: Login to DockerHub
-        uses: docker/login-action@v2
+      - name: Check whether Docker Hub credentials are available
+        id: creds
+        run: |
+          if [ -n "${{ secrets.DOCKER_USER }}" ] && [ -n "${{ secrets.DOCKER_PASSWORD }}" ]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to Docker Hub
+        if: startsWith(github.ref, 'refs/tags/') && steps.creds.outputs.available == 'true'
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKER_USER }}
           password: ${{ secrets.DOCKER_PASSWORD }}
 
-      - name: Extract metadata (tags, labels) for Docker
+      - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v4
+        uses: docker/metadata-action@v5
         with:
-          images: ${{ matrix.image }}
-      
-      - name: Build and push Docker image
-        uses: docker/build-push-action@v3
+          images: denglab/vpfkit
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
         with:
           context: "."
-          file: ${{ matrix.dockerfile }}
-          push: true
+          file: ./docker/Dockerfile
+          platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          push: ${{ startsWith(github.ref, 'refs/tags/') && steps.creds.outputs.available == 'true' }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha

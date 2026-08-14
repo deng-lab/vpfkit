@@ -1,0 +1,7 @@
+Protein	Contig	Genome	Protein Classification	Protein Viral Origin Confidence	Protein in Strict Viral Region	Function	KEGG KO	KEGG KO Name	FOAM ID	FOAM Annotation	Pfam Accession	Pfam Name	CAZy Family	CAZy Activities	METABOLIC db ID	METABOLIC Annotation	CAMPER ID	CAMPER Annotation	PHROG Number	PHROG Annotation	Best Scoring HMM	Best Scoring HMM Annotation	Best Scoring HMM Origin
+ctg001_1	ctg001	ctg001	metabolic	low	false	cobT; cobaltochelatase CobT [EC:6.6.1.2]	K09883	cobT; cobaltochelatase CobT [EC:6.6.1.2]													K09883	cobT; cobaltochelatase CobT [EC:6.6.1.2]	KEGG
+ctg001_2	ctg001	ctg001	unclassified	high	true	tail sheath													phrog_165	tail sheath	phrog_165	tail sheath	PHROG
+ctg001_3	ctg001	ctg001	regulatory	medium	true	transcriptional regulator					PF01381	HTH_3									PF01381	HTH_3	Pfam
+ctg002_1	ctg002	ctg002	physiological	high	true	thioredoxin	K03671	trxA; thioredoxin													K03671	trxA; thioredoxin	KEGG
+ctg002_2	ctg002	ctg002	unclassified	low	false	hypothetical protein																	
+ctg004_1	ctg004	ctg004	metabolic	high	true	queuosine biosynthesis	K06920	queC													K06920	queC	KEGG

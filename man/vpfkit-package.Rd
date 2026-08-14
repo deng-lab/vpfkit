@@ -19,5 +19,10 @@ Useful links:
 \author{
 \strong{Maintainer}: Jinlong Ru \email{jinlong.ru@gmail.com} (\href{https://orcid.org/0000-0002-6757-6018}{ORCID})
 
+Authors:
+\itemize{
+  \item Jinlong Ru \email{jinlong.ru@gmail.com} (\href{https://orcid.org/0000-0002-6757-6018}{ORCID})
+}
+
 }
 \keyword{internal}

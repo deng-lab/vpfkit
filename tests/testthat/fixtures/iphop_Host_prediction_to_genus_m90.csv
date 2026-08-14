@@ -1,0 +1,5 @@
+Virus,AAI to closest RaFAH reference,Host genus,Confidence score,List of methods
+ctg001,85.2,Escherichia,95.0,RaFAH;CHERRY
+ctg001,72.4,Salmonella,81.0,RaFAH
+ctg002,60.5,Bacillus,70.0,RaFAH
+ctg004,90.1,Salmonella,98.0,RaFAH;CHERRY;PHP

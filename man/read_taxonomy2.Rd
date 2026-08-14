@@ -2,16 +2,24 @@
 % Please edit documentation in R/fct_readvpf.R
 \name{read_taxonomy2}
 \alias{read_taxonomy2}
-\title{Read mmseqs2 taxonomy table}
+\title{Read the merged ViroProfiler taxonomy table}
 \usage{
 read_taxonomy2(fin)
 }
 \arguments{
-\item{fin}{taxonomy annotation file}
+\item{fin}{`taxonomy_tse.tsv`}
 }
 \value{
-data.frame
+data.frame with `Contig` and one column per rank
 }
 \description{
-Read mmseqs2 taxonomy table
+Reads `taxonomy_tse.tsv` written by `bin/merge_taxonomy.py`, which resolves
+each rank independently from VITAP and vConTACT3. `Domain` holds the ICTV
+realm, or the literal `Viruses` for a contig placed only at a lower rank;
+`taxa_id` is 1 when a contig received any assignment and 0 when it received
+none, and rows with 0 are dropped.
+}
+\details{
+Unresolved ranks are written as empty fields, not as `NA`, and are converted
+to `NA` here so that an unassigned rank does not read as an assigned one.
 }
