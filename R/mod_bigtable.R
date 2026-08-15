@@ -1,11 +1,17 @@
 #' bigtable UI Function
 #'
-#' @description A reusable table module that keeps large data frames on the
-#'   server. Small tables are rendered in full and searched and sorted in the
-#'   browser. Once a table exceeds `server_threshold` rows the module switches
-#'   to server-side mode: filtering, sorting and paging all happen in R and
-#'   only the visible page is sent to the client, so a hundred-thousand-row
-#'   annotation table never has to be serialized into the page.
+#' @description A reusable table module that keeps data frames on the server.
+#'   Searching, sorting and paging all happen in R, and only the visible page is
+#'   sent to the client, so a hundred-thousand-row annotation table never has to
+#'   be serialized into the page.
+#'
+#'   One engine does all three for every table, whatever its size. The
+#'   alternative -- letting reactable search and sort small tables in the
+#'   browser -- gives the user two sets of controls over one table, and the
+#'   download button can only honour one of them: a browser-side filter narrows
+#'   the screen while the download still carries what R last selected. Choosing
+#'   "All" under "Rows per page" renders a whole small table at once, which is
+#'   what the client-side mode was for.
 #'
 #' @param id Module id.
 #' @param height Table height, passed to `reactable`.
@@ -22,7 +28,10 @@ mod_bigtable_ui <- function(id, height = "520px") {
       column(2, selectInput(ns("sort_dir"), "Order",
                             choices = c("Ascending" = "asc", "Descending" = "desc"))),
       column(3, selectInput(ns("page_size"), "Rows per page",
-                            choices = c(10, 25, 50, 100, 250), selected = 25))
+                            choices = c("10" = "10", "25" = "25", "50" = "50",
+                                        "100" = "100", "250" = "250",
+                                        "All" = "all"),
+                            selected = "25"))
     ),
     uiOutput(ns("column_picker")),
     div(style = "margin-bottom: 6px;", uiOutput(ns("pager"))),
@@ -32,7 +41,7 @@ mod_bigtable_ui <- function(id, height = "520px") {
       downloadButton(ns("download_tsv"), "Download this table (TSV)"),
       downloadButton(ns("download_csv"), "Download this table (CSV)")
     ),
-    vpf_caption(textOutput(ns("mode_note"), inline = TRUE))
+    vpf_caption(textOutput(ns("table_note"), inline = TRUE))
   )
 }
 
@@ -41,14 +50,12 @@ mod_bigtable_ui <- function(id, height = "520px") {
 #' @param id Module id.
 #' @param r_data A reactive returning a `data.frame`, or `NULL`.
 #' @param filename A reactive or constant giving the download file stem.
-#' @param server_threshold Row count above which server-side mode is used.
 #' @param default_columns Optional character vector, or a reactive returning
 #'   one, naming the columns shown initially.
 #'
 #' @return A reactive returning the currently filtered (not paged) data frame.
 #' @noRd
 mod_bigtable_server <- function(id, r_data, filename = "table",
-                                server_threshold = 2000,
                                 default_columns = NULL) {
   moduleServer(id, function(input, output, session) {
     ns <- session$ns
@@ -63,11 +70,6 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
       # whatever key column the caller already put first.
       rownames(df) <- NULL
       if (ncol(df) == 0) NULL else df
-    })
-
-    server_mode <- reactive({
-      df <- full_data()
-      !is.null(df) && nrow(df) > server_threshold
     })
 
     current_page <- reactiveVal(1L)
@@ -108,8 +110,8 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
       current_page(1L)
     }, ignoreNULL = FALSE)
 
-    # Filtering and sorting are always done in R so that the result is the
-    # same in both modes and the download matches what is displayed.
+    # Filtering and sorting happen here, over the whole table, so that a
+    # download describes the same selection as the screen.
     filtered <- reactive({
       df <- full_data()
       if (is.null(df)) {
@@ -142,7 +144,17 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
     })
 
     page_size <- reactive({
-      ps <- suppressWarnings(as.integer(input$page_size))
+      ps <- input$page_size
+      if (length(ps) != 1L) {
+        return(25L)
+      }
+      # "All" is a page as tall as the result, which keeps every downstream
+      # calculation (n_pages, the row range, the slice) on one code path.
+      if (identical(as.character(ps), "all")) {
+        df <- filtered()
+        return(if (is.null(df) || nrow(df) == 0L) 25L else nrow(df))
+      }
+      ps <- suppressWarnings(as.integer(ps))
       if (is.na(ps) || ps < 1) 25L else ps
     })
 
@@ -172,7 +184,9 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
         return(NULL)
       }
       total <- nrow(df)
-      if (!server_mode()) {
+      # One page holds everything: the buttons would be inert, so say the size
+      # and stop.
+      if (n_pages() <= 1L) {
         return(vpf_caption(sprintf("%s rows", format(total, big.mark = ","))))
       }
       pg <- min(current_page(), n_pages())
@@ -196,9 +210,6 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
         return(NULL)
       }
       df <- df[, visible_columns(), drop = FALSE]
-      if (!server_mode()) {
-        return(df)
-      }
       if (nrow(df) == 0) {
         return(df)
       }
@@ -221,35 +232,29 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
       df <- vpf_round_df(df)
       reactable::reactable(
         df,
-        # Filtering, sorting and paging are handled in R so the displayed
-        # rows and downloaded results always describe the same selection.
+        # reactable is a renderer here, nothing more. Its own controls act on
+        # the rows it was handed, which are one page of a selection R already
+        # made, so leaving them on would sort a page and present it as a sort of
+        # the table -- and would filter the screen without touching what the
+        # download button writes.
         sortable = FALSE,
         searchable = FALSE,
         pagination = FALSE,
-        defaultPageSize = page_size(),
         striped = TRUE, highlight = TRUE, bordered = TRUE,
         resizable = TRUE, wrap = FALSE, compact = TRUE,
-        showPageSizeOptions = FALSE,
-        pageSizeOptions = c(10, 25, 50, 100, 250),
         defaultColDef = reactable::colDef(minWidth = 110)
       )
     })
 
-    output$mode_note <- renderText({
+    output$table_note <- renderText({
       df <- full_data()
       if (is.null(df)) {
         return("")
       }
-      if (server_mode()) {
-        sprintf(paste("Server-side mode: %s rows are held in R and only the",
-                      "current page is sent to the browser. Search and sort are",
-                      "applied to the whole table."),
-                format(nrow(df), big.mark = ","))
-      } else {
-        sprintf(paste("Client-side mode: all %s rows are sent to the browser,",
-                      "so sorting and searching are instant."),
-                format(nrow(df), big.mark = ","))
-      }
+      sprintf(paste("Search and sort are applied in R across all %s rows, and",
+                    "only the current page is sent to the browser. A download",
+                    "contains the whole search result, not the page on screen."),
+              format(nrow(df), big.mark = ","))
     })
 
     stem <- function() {

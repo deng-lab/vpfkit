@@ -9,31 +9,28 @@ test_that("no data renders a placeholder table", {
     expect_null(full_data())
     expect_null(filtered())
     expect_false(is.null(output$table))
-    expect_equal(output$mode_note, "")
+    expect_equal(output$table_note, "")
   })
 })
 
-test_that("a small table stays client-side", {
+test_that("a table shorter than one page is served whole", {
   df <- data.frame(a = 1:20, b = letters[1:20], stringsAsFactors = FALSE)
   testServer(mod_bigtable_server, args = list(r_data = shiny::reactive(df)), {
     session$setInputs(search = "", sort_by = "", sort_dir = "asc", page_size = "25")
-    expect_false(server_mode())
     expect_equal(nrow(page_data()), 20)
-    expect_match(output$mode_note, "Client-side mode")
+    expect_equal(n_pages(), 1)
+    expect_match(output$table_note, "applied in R across all 20 rows")
   })
 })
 
-test_that("a large table switches to server-side paging", {
+test_that("only the current page reaches the browser", {
   df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
   testServer(mod_bigtable_server,
-             args = list(r_data = shiny::reactive(df), server_threshold = 100), {
+             args = list(r_data = shiny::reactive(df)), {
     session$setInputs(search = "", sort_by = "", sort_dir = "asc", page_size = "25")
-    expect_true(server_mode())
-    # Only the current page reaches the browser.
     expect_equal(nrow(page_data()), 25)
     expect_equal(page_data()$a, 1:25)
     expect_equal(n_pages(), 20)
-    expect_match(output$mode_note, "Server-side mode")
 
     session$setInputs(next_page = 1)
     expect_equal(page_data()$a, 26:50)
@@ -48,7 +45,7 @@ test_that("a large table switches to server-side paging", {
 test_that("search and sort apply to the whole table, not just the page", {
   df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
   testServer(mod_bigtable_server,
-             args = list(r_data = shiny::reactive(df), server_threshold = 100), {
+             args = list(r_data = shiny::reactive(df)), {
     session$setInputs(search = "", sort_by = "a", sort_dir = "desc",
                       page_size = "10")
     expect_equal(page_data()$a, 500:491)
@@ -96,10 +93,24 @@ test_that("search stays case-insensitive while matching literally", {
   })
 })
 
+test_that("'All' renders the whole result on one page", {
+  df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
+  testServer(mod_bigtable_server, args = list(r_data = shiny::reactive(df)), {
+    session$setInputs(search = "", sort_by = "", sort_dir = "asc", page_size = "all")
+    expect_equal(n_pages(), 1)
+    expect_equal(nrow(page_data()), 500)
+
+    # A search narrows the single page rather than reintroducing paging.
+    session$setInputs(search = "row_49")
+    expect_equal(n_pages(), 1)
+    expect_equal(nrow(page_data()), nrow(filtered()))
+  })
+})
+
 test_that("changing the search resets to the first page", {
   df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
   testServer(mod_bigtable_server,
-             args = list(r_data = shiny::reactive(df), server_threshold = 100), {
+             args = list(r_data = shiny::reactive(df)), {
     session$setInputs(search = "", sort_by = "", sort_dir = "asc", page_size = "25")
     session$setInputs(next_page = 1)
     session$setInputs(next_page = 2)
@@ -128,7 +139,7 @@ test_that("column selection restricts both display and search", {
 test_that("downloads contain the full search result", {
   df <- data.frame(a = 1:500, b = paste0("row_", 1:500), stringsAsFactors = FALSE)
   testServer(mod_bigtable_server,
-             args = list(r_data = shiny::reactive(df), server_threshold = 100,
+             args = list(r_data = shiny::reactive(df),
                          filename = "things"), {
     session$setInputs(search = "", sort_by = "", sort_dir = "asc", page_size = "25")
     f <- tempfile(fileext = ".tsv")
