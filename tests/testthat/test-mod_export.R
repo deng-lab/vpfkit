@@ -27,6 +27,16 @@ test_that("module ui works", {
   expect_true("id" %in% names(formals(mod_export_ui)))
 })
 
+test_that("report availability explains missing Quarto installations", {
+  local_mocked_bindings(
+    .vpf_quarto_available = function() FALSE,
+    .vpf_quarto_hint = function() "Install Quarto to render reports."
+  )
+  testServer(mod_export_server, args = list(r_filter = vpf_exp_filter(NULL)), {
+    expect_match(output$report_availability, "Install Quarto to render reports")
+  })
+})
+
 test_that("provenance describes the selection even with nothing loaded", {
   testServer(mod_export_server, args = list(r_filter = vpf_exp_filter(NULL)), {
     txt <- provenance_text()

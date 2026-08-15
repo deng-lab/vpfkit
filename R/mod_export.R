@@ -206,8 +206,7 @@ mod_export_server <- function(id, r_filter) {
     name_report <- dl_name("report", "html")
     write_report <- function(file) {
       tse <- require_tse()
-      validate(need(requireNamespace("quarto", quietly = TRUE),
-                    "The quarto R package is required to render the report."))
+      validate(need(.vpf_quarto_available(), .vpf_quarto_hint()))
       withProgress(message = "Rendering the report", value = 0.3, {
         generate_report(tse, file)
       })
@@ -247,11 +246,10 @@ mod_export_server <- function(id, r_filter) {
     )
 
     output$report_availability <- renderUI({
-      if (!requireNamespace("quarto", quietly = TRUE)) {
+      if (!.vpf_quarto_available()) {
         return(vpf_notice(
           type = "warning",
-          "The quarto R package is not installed on this server, so report",
-          "generation is unavailable. Install it with install.packages('quarto')."
+          .vpf_quarto_hint()
         ))
       }
       NULL

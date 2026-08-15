@@ -216,16 +216,15 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
       df <- vpf_round_df(df)
       reactable::reactable(
         df,
-        # In server-side mode sorting and paging are handled in R, so the
-        # client-side controls are switched off to avoid sorting only the
-        # visible page and presenting it as a sort of the whole table.
-        sortable = !server_mode(),
-        searchable = !server_mode(),
-        pagination = !server_mode(),
+        # Filtering, sorting and paging are handled in R so the displayed
+        # rows and downloaded results always describe the same selection.
+        sortable = FALSE,
+        searchable = FALSE,
+        pagination = FALSE,
         defaultPageSize = page_size(),
         striped = TRUE, highlight = TRUE, bordered = TRUE,
         resizable = TRUE, wrap = FALSE, compact = TRUE,
-        showPageSizeOptions = !server_mode(),
+        showPageSizeOptions = FALSE,
         pageSizeOptions = c(10, 25, 50, 100, 250),
         defaultColDef = reactable::colDef(minWidth = 110)
       )
