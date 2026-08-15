@@ -805,25 +805,46 @@ abundance_adjust_by_covfrac <- function(df_abundance, df_covfrac,
 }
 
 
-#' Convert reads per base to per-base depth
+#' Convert reads per base to per-base depth (deprecated)
 #'
 #' CoverM's `reads_per_base` counts reads mapped per contig base; multiplying by
 #' the read length gives bases per base, that is, fold coverage.
 #'
-#' The conversion assumes every mapped read contributes exactly `reads_len`
-#' aligned bases, which it does not: fastp trims to variable lengths and the
-#' aligner soft-clips. Treat the result as an approximation, and pass the mean
-#' clean read length reported by fastp (`fastp/<sample>.fastp.json`, field
-#' `summary$after_filtering$read1_mean_length`) rather than relying on the
-#' default.
+#' Deprecated because it estimates, less accurately, something the pipeline
+#' already measures. The conversion assumes every mapped read contributes
+#' exactly `reads_len` aligned bases, which it does not: fastp trims to variable
+#' lengths and the aligner soft-clips. On the sixteen-sample reference run the
+#' true mean aligned length is about 125 bp against a default of 150, so the
+#' default overstates depth by roughly 20 %. Meanwhile CoverM computes coverage
+#' depth exactly, and ViroProfiler already stores it as the `trimmed_mean`
+#' assay.
+#'
+#' Use `assay(tse, "trimmed_mean")` instead. It is a trimmed mean rather than a
+#' plain one, so it is not the identical quantity — it discards the highest and
+#' lowest coverage percentiles and is the more robust estimate on the uneven
+#' coverage that viral contigs usually have. If a plain mean is genuinely what
+#' is wanted, ask CoverM for it with `--methods mean` rather than reconstructing
+#' one from read counts.
+#'
+#' Note also that no ViroProfiler run feeds this function: the pipeline emits
+#' `abundance_contigs_reads_per_base.tsv.gz` but nothing consumes it, and the
+#' TSE is built from `count`, `tpm`, `trimmed_mean` and `covered_fraction`.
 #'
 #' @param fin Path of a CoverM `reads_per_base` table
-#' @param reads_len Mean length of the clean reads
+#' @param reads_len Mean length of the clean reads. The fastp report has the
+#'   measured value, in `summary$after_filtering$read1_mean_length`.
 #'
 #' @return matrix
 #' @export
 #'
 rpb2bpb <- function(fin, reads_len = 150) {
+  .Deprecated(msg = paste0(
+    "rpb2bpb() is deprecated. It approximates coverage depth by assuming every ",
+    "read contributes ", reads_len, " aligned bases; CoverM measures depth ",
+    "exactly and ViroProfiler stores it as the 'trimmed_mean' assay. Use ",
+    "assay(tse, \"trimmed_mean\"), or run CoverM with --methods mean if an ",
+    "untrimmed mean is what you need."
+  ))
   df_rpb <- .read_table(fin, "CoverM reads_per_base")
   if (!"Contig" %in% colnames(df_rpb)) {
     stop("CoverM reads_per_base file missing 'Contig' column", call. = FALSE)
