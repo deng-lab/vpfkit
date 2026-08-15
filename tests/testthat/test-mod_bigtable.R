@@ -70,6 +70,29 @@ test_that("search treats regular expression characters literally", {
   testServer(mod_bigtable_server, args = list(r_data = shiny::reactive(df)), {
     session$setInputs(search = "[", sort_by = "", sort_dir = "asc", page_size = "25")
     expect_equal(filtered()$value, c("[", "a["))
+
+    # `.*` matches everything as a regular expression and only itself as a
+    # literal.
+    session$setInputs(search = ".*")
+    expect_equal(filtered()$value, ".*")
+  })
+})
+
+test_that("search stays case-insensitive while matching literally", {
+  # `grepl(fixed = TRUE)` ignores `ignore.case`, so asking for both at once
+  # silently drops the case folding and warns once per column.
+  df <- data.frame(value = c("NODE_1", "node_2", "Contig[3]"),
+                   stringsAsFactors = FALSE)
+  testServer(mod_bigtable_server, args = list(r_data = shiny::reactive(df)), {
+    expect_no_warning({
+      session$setInputs(search = "node", sort_by = "", sort_dir = "asc",
+                        page_size = "25")
+      hits <- filtered()$value
+    })
+    expect_equal(hits, c("NODE_1", "node_2"))
+
+    session$setInputs(search = "CONTIG[3]")
+    expect_equal(filtered()$value, "Contig[3]")
   })
 })
 

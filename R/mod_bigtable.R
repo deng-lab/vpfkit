@@ -117,13 +117,18 @@ mod_bigtable_server <- function(id, r_data, filename = "table",
       }
       needle <- input$search
       if (!is.null(needle) && nzchar(trimws(needle))) {
-        pattern <- trimws(needle)
+        # Both halves matter, and `grepl` cannot give them at once: `fixed =
+        # TRUE` is what stops a contig name like `NODE_1[2]` being read as a
+        # regular expression, but it makes R *ignore* `ignore.case` -- silently
+        # as far as the result goes, and with a warning per column. Folding both
+        # sides instead keeps the match literal and case-insensitive.
+        pattern <- tolower(trimws(needle))
         cols <- visible_columns()
         hit <- rep(FALSE, nrow(df))
         for (nm in cols) {
           v <- as.character(df[[nm]])
           v[is.na(v)] <- ""
-          hit <- hit | grepl(pattern, v, ignore.case = TRUE, fixed = TRUE)
+          hit <- hit | grepl(pattern, tolower(v), fixed = TRUE)
         }
         df <- df[hit, , drop = FALSE]
       }
