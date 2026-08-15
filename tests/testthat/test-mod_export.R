@@ -33,8 +33,11 @@ test_that("report availability explains missing Quarto installations", {
     .vpf_quarto_hint = function() "Install Quarto to render reports."
   )
   testServer(mod_export_server, args = list(r_filter = vpf_exp_filter(NULL)), {
-    expect_true(grepl(.vpf_quarto_hint(), as.character(output$report_availability),
-                      fixed = TRUE))
+    # `testServer` resolves a renderUI output to list(html =, deps =), so
+    # as.character() yields two elements and expect_true() on the vector fails
+    # on the second one. Flatten before matching.
+    html <- paste(as.character(output$report_availability), collapse = " ")
+    expect_match(html, .vpf_quarto_hint(), fixed = TRUE)
   })
 })
 
@@ -55,7 +58,8 @@ test_that("provenance records the assay semantics and every filter step", {
     expect_match(txt, "Active abundance assay:   counts")
     expect_match(txt, "Contig length")
     expect_match(txt, "CoverM read count", fixed = TRUE)
-    expect_match(txt, "R version")
+    # See test-mod_about.R: R devel's version string contains no "R version".
+    expect_match(txt, R.version.string, fixed = TRUE)
   })
 })
 

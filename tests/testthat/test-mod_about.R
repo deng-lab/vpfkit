@@ -33,7 +33,9 @@ test_that("the tutorial and footer render", {
     expect_false(is.null(output$tutorial))
     expect_false(is.null(output$footer))
     expect_match(output$versions, "vpfkit")
-    expect_match(output$versions, "R version")
+    # Not the literal "R version": on R devel `R.version.string` reads
+    # "R Under development (unstable) (...)" and has no such words in it.
+    expect_match(output$versions, R.version.string, fixed = TRUE)
   })
 })
 
