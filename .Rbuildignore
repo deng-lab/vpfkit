@@ -18,3 +18,7 @@
 ^workflow$
 data-raw/hpc
 ^\.dockerignore$
+# Left behind by `dev/run_app.sh --detach`. Git ignores them, which is why a
+# clean CI checkout never sees them, but `R CMD build` would otherwise put them
+# in the tarball and check reports them as hidden files.
+^\.shiny_dev\.

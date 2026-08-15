@@ -24,8 +24,12 @@ TSE <- Sys.getenv(
   "/mnt/nas26/testdata/viroprofiler_16sample/run_final/results/viroprofiler_output.rds"
 )
 if (!file.exists(TSE)) stop("No test object at ", TSE, "; set VPFKIT_TEST_TSE.")
-# A snap-packaged chromium has a private /tmp and cannot see an upload staged there.
-staged <- file.path(path.expand("~"), ".vpfkit_headless_upload.rds")
+# A snap-packaged chromium has a private /tmp and cannot see an upload staged
+# there. The name must not begin with a dot either: snap's `home` interface
+# grants access to non-hidden files only, so a dotfile in $HOME is as invisible
+# to the browser as one in /tmp -- and the upload then silently yields nothing,
+# leaving every tab in its empty state.
+staged <- file.path(path.expand("~"), "vpfkit_headless_upload.rds")
 file.copy(TSE, staged, overwrite = TRUE)
 on.exit(unlink(staged), add = TRUE)
 app <- AppDriver$new(app_dir = ".", name = "vpf16d", height = 1000, width = 1600,
