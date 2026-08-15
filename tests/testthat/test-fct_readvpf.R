@@ -695,14 +695,15 @@ test_that("normalize_assay_names leaves a current object untouched", {
 # --- annotate_viral_votes / create_vpftse_vir ----------------------------
 test_that("create_vpftse_vir filters to viral contigs", {
   tse <- build_fixture_tse(fin_genomad = fx("genomad_summary.tsv"))
-  tse_vir <- create_vpftse_vir(tse)
+  tse_vir <- create_vpftse_vir(tse, rule = "vote")
   expect_s4_class(tse_vir, "TreeSummarizedExperiment")
   expect_lte(nrow(tse_vir), nrow(tse))
   expect_gte(nrow(tse_vir), 1)
 })
 
 test_that("annotate_viral_votes records the evidence behind every contig", {
-  tse <- annotate_viral_votes(build_fixture_tse(fin_genomad = fx("genomad_summary.tsv")))
+  tse <- annotate_viral_votes(build_fixture_tse(fin_genomad = fx("genomad_summary.tsv")),
+                              rule = "vote")
   rd <- SummarizedExperiment::rowData(tse)
   expect_true(all(c("viral_vote_taxonomy", "viral_vote_checkv", "viral_vote_genomad",
                     "viral_vote_n", "viral_vote_evidence", "viral_selected")
@@ -723,7 +724,7 @@ test_that("a missing vote column is skipped rather than collapsing the whole res
   tse <- build_fixture_tse()
   rd <- SummarizedExperiment::rowData(tse)
   SummarizedExperiment::rowData(tse) <- rd[, setdiff(colnames(rd), "Domain"), drop = FALSE]
-  expect_warning(tse_vir <- create_vpftse_vir(tse), "votes skipped")
+  expect_warning(tse_vir <- create_vpftse_vir(tse, rule = "vote"), "votes skipped")
   expect_gt(nrow(tse_vir), 0)
 })
 
@@ -733,7 +734,8 @@ test_that("create_vpftse_vir errors when no vote column is available at all", {
   vote_cols <- c("Domain", "checkv_quality", "virsorter2_max_score_group",
                  "vibrant_quality", "dvf_score", "genomad_score")
   SummarizedExperiment::rowData(tse) <- rd[, setdiff(colnames(rd), vote_cols), drop = FALSE]
-  expect_error(create_vpftse_vir(tse), "None of the requested viral-identity votes")
+  expect_error(create_vpftse_vir(tse, rule = "vote"),
+               "None of the requested viral-identity votes")
 })
 
 test_that("an empty-string taxonomy rank does not count as a viral vote", {
@@ -741,15 +743,15 @@ test_that("an empty-string taxonomy rank does not count as a viral vote", {
   rd <- SummarizedExperiment::rowData(tse)
   rd$Domain <- c("Duplodnaviria", "", "  ", NA, "Viruses")
   SummarizedExperiment::rowData(tse) <- rd
-  tse <- annotate_viral_votes(tse, votes = "taxonomy")
+  tse <- annotate_viral_votes(tse, rule = "vote", votes = "taxonomy")
   expect_equal(unname(SummarizedExperiment::rowData(tse)$viral_vote_taxonomy),
                c(TRUE, FALSE, FALSE, FALSE, TRUE))
 })
 
 test_that("the geNomad threshold is a parameter", {
   tse <- build_fixture_tse(fin_genomad = fx("genomad_summary.tsv"))
-  strict <- annotate_viral_votes(tse, votes = "genomad", genomad_min_score = 0.99)
-  loose <- annotate_viral_votes(tse, votes = "genomad", genomad_min_score = 0.1)
+  strict <- annotate_viral_votes(tse, rule = "vote", votes = "genomad", genomad_min_score = 0.99)
+  loose <- annotate_viral_votes(tse, rule = "vote", votes = "genomad", genomad_min_score = 0.1)
   expect_lt(sum(SummarizedExperiment::rowData(strict)$viral_selected),
             sum(SummarizedExperiment::rowData(loose)$viral_selected))
   expect_equal(S4Vectors::metadata(strict)$viral_selection$thresholds$genomad_min_score,
@@ -772,6 +774,43 @@ test_that("create_vpftse_vir errors when the candidate rule is asked for without
   expect_error(create_vpftse_vir(tse, rule = "candidate"), "upstream_viral_candidate")
 })
 
+test_that("the candidate list is the default when it is there", {
+  lst <- withr::local_tempfile(fileext = ".list")
+  writeLines(c("ctg001", "ctg004"), lst)
+  tse <- build_fixture_tse(fin_vircontigs = lst)
+  # No `rule =`: the point is what happens with nothing specified.
+  tse_vir <- create_vpftse_vir(tse)
+  expect_equal(S4Vectors::metadata(tse_vir)$viral_selection$rule, "candidate")
+  expect_equal(sort(rownames(tse_vir)), c("ctg001", "ctg004"))
+})
+
+test_that("the votes are still recorded under the candidate rule", {
+  # The candidate list is one flag, so without this there is no way to ask
+  # afterwards how much detector support a kept contig actually had.
+  lst <- withr::local_tempfile(fileext = ".list")
+  writeLines(c("ctg001", "ctg004"), lst)
+  tse <- annotate_viral_votes(build_fixture_tse(fin_vircontigs = lst,
+                                                fin_genomad = fx("genomad_summary.tsv")))
+  rd <- SummarizedExperiment::rowData(tse)
+  expect_true(all(c("viral_vote_checkv", "viral_vote_genomad", "viral_vote_n",
+                    "viral_vote_evidence") %in% colnames(rd)))
+  # A real count, not the 0/1 recoding of the selection.
+  expect_gt(max(rd$viral_vote_n), 1L)
+  # And the decision is the candidate list, not the union.
+  expect_equal(sort(rownames(tse)[rd$viral_selected]), c("ctg001", "ctg004"))
+  meta <- S4Vectors::metadata(tse)$viral_selection
+  expect_equal(meta$rule, "candidate")
+  expect_true(meta$n_union >= meta$n_selected || meta$n_union > 0)
+})
+
+test_that("a missing candidate list falls back to the votes, loudly, only by default", {
+  tse <- build_fixture_tse()
+  expect_warning(vir <- create_vpftse_vir(tse), "decided by the detector votes")
+  expect_equal(S4Vectors::metadata(vir)$viral_selection$rule, "vote")
+  # Asking for it by name is an error rather than a quiet change of rule.
+  expect_error(create_vpftse_vir(tse, rule = "candidate"), "upstream_viral_candidate")
+})
+
 test_that("create_vpftse_vir warns instead of silently returning nothing", {
   tse <- build_fixture_tse()
   rd <- SummarizedExperiment::rowData(tse)
@@ -781,7 +820,7 @@ test_that("create_vpftse_vir warns instead of silently returning nothing", {
   rd$vibrant_quality <- factor(NA, levels = levels(rd$vibrant_quality))
   rd$dvf_score <- NA_real_
   SummarizedExperiment::rowData(tse) <- rd
-  expect_warning(tse_vir <- create_vpftse_vir(tse), "zero rows")
+  expect_warning(tse_vir <- create_vpftse_vir(tse, rule = "vote"), "zero rows")
   expect_equal(nrow(tse_vir), 0)
 })
 

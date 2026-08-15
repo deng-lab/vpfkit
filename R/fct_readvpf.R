@@ -1923,17 +1923,24 @@ batch_create_vpftse <- function(vpdir, df_metadata = NULL, version = "auto") {
 #' The rule, the thresholds and the votes that could not be evaluated are stored
 #' in `metadata(tse)$viral_selection`.
 #'
-#' Because votes are combined with OR, this is a permissive union chosen for
-#' sensitivity, not a consensus. It is also not a set of independent tests: in
-#' ViroProfiler, geNomad, CheckV and VIBRANT already determined which contigs
-#' entered the candidate set, VirSorter2 ran only on that candidate set, and the
-#' merged taxonomy was computed from it. `rule = "candidate"` uses the pipeline's
-#' own candidate list instead and is the more defensible criterion when
-#' `create_vpftse()` was given `fin_vircontigs`.
+#' `rule = "candidate"` is the default: it takes the viral set from the
+#' pipeline's own candidate list, which is what every stage downstream of
+#' `VIRCONTIGS_PRE` was actually computed on.
+#'
+#' `rule = "vote"` combines the votes with OR, giving a permissive union chosen
+#' for sensitivity rather than a consensus. It is also not a set of independent
+#' tests: geNomad, CheckV and VIBRANT already determined which contigs entered
+#' the candidate set, VirSorter2 ran only on that set, and the merged taxonomy
+#' was computed from it — so `viral_vote_n` counts views of one decision rather
+#' than independent confirmations of it. Measured on two datasets, the votes
+#' overlap pairwise at 0.79–0.87 (161 contigs) and 0.97 (16,934 contigs), and
+#' the union keeps 62 % and 98.5 % of those libraries respectively. The vote
+#' columns are still computed and stored under either rule, so
+#' `rowData$viral_vote_n` and `viral_vote_evidence` remain available.
 #'
 #' @param tse A TSE built by [create_vpftse()]
-#' @param rule `"vote"` (default) for the OR of the votes below, or `"candidate"`
-#'   for the pipeline's own putative viral contig list
+#' @param rule `"candidate"` (default) for the pipeline's own putative viral
+#'   contig list, or `"vote"` for the OR of the votes below
 #' @param votes Names of the votes to evaluate. Defaults to all of `taxonomy`,
 #'   `checkv`, `virsorter2`, `vibrant`, `dvf`, `genomad`.
 #' @param genomad_min_score Minimum geNomad `virus_score`. The default of 0.7 is
@@ -1948,7 +1955,7 @@ batch_create_vpftse <- function(vpdir, df_metadata = NULL, version = "auto") {
 #' @export
 #' @importFrom SummarizedExperiment rowData
 annotate_viral_votes <- function(tse,
-                                 rule = c("vote", "candidate"),
+                                 rule = c("candidate", "vote"),
                                  votes = names(.VPF_VOTES),
                                  genomad_min_score = 0.7,
                                  checkv_levels = c("Complete", "High-quality",
@@ -1965,29 +1972,27 @@ annotate_viral_votes <- function(tse,
          ". Available: ", paste(names(.VPF_VOTES), collapse = ", "), call. = FALSE)
   }
 
+  # Under `rule = "candidate"` the decision comes from this column, so its
+  # absence is fatal there and irrelevant under `rule = "vote"`.
+  candidate <- NULL
   if (rule == "candidate") {
     if (!candidate_col %in% colnames(rd)) {
       stop("rowData has no '", candidate_col, "' column. Build the object with ",
            "create_vpftse(fin_vircontigs = ...) to record which contigs the ",
-           "pipeline selected as putative viruses.", call. = FALSE)
+           "pipeline selected as putative viruses, or pass rule = \"vote\" to ",
+           "decide from the detector votes instead.", call. = FALSE)
     }
-    selected <- as.logical(rd[[candidate_col]])
-    if (length(selected) != n || anyNA(selected)) {
+    candidate <- as.logical(rd[[candidate_col]])
+    if (length(candidate) != n || anyNA(candidate)) {
       stop("'", candidate_col, "' must be a logical vector of length ", n,
            " with no NA", call. = FALSE)
     }
-    rd$viral_selected <- selected
-    rd$viral_vote_n <- as.integer(selected)
-    rd$viral_vote_evidence <- ifelse(selected, "upstream_candidate", NA_character_)
-    SummarizedExperiment::rowData(tse) <- rd
-    S4Vectors::metadata(tse)$viral_selection <- list(
-      rule = "candidate", candidate_col = candidate_col,
-      votes_used = character(0), votes_missing = character(0),
-      thresholds = list(), n_total = n, n_selected = sum(selected),
-      decided_at = Sys.time())
-    return(tse)
   }
 
+  # The votes are computed under both rules. They do not decide anything when
+  # `rule = "candidate"`, but `viral_vote_n` and `viral_vote_evidence` are how
+  # anyone asks afterwards how much support a kept contig actually had -- which
+  # is the question the candidate list, being a single flag, cannot answer.
   vote_mat <- matrix(FALSE, nrow = n, ncol = 0)
   used <- character(0)
   missing_votes <- character(0)
@@ -2019,22 +2024,30 @@ annotate_viral_votes <- function(tse,
     used <- c(used, nm)
   }
 
-  if (length(used) == 0L) {
+  # No evaluable vote is fatal only when the votes decide the outcome. Under
+  # `rule = "candidate"` they are diagnostic, so their absence leaves
+  # `viral_vote_n` at zero and the candidate list still does its job.
+  if (length(used) == 0L && rule == "vote") {
     stop("None of the requested viral-identity votes could be evaluated: ",
          paste(missing_votes, collapse = ", "),
          ". Refusing to return an empty or unfiltered object. Check that the ",
          "upstream tables were joined and that their column names are unchanged.",
          call. = FALSE)
   }
-  if (length(missing_votes) > 0) {
+  # Only worth warning about when the votes decide the outcome. Under
+  # `rule = "candidate"` a missing vote column costs a diagnostic column and
+  # nothing else, and `metadata()$viral_selection$votes_missing` records it
+  # either way.
+  if (length(missing_votes) > 0 && rule == "vote") {
     warning("Viral-identity votes skipped because their rowData columns are absent: ",
             paste(missing_votes, collapse = ", "),
-            ". The remaining votes were used: ", paste(used, collapse = ", "),
+            ". The remaining votes were used: ",
+            if (length(used)) paste(used, collapse = ", ") else "(none)",
             call. = FALSE)
   }
 
   vote_mat <- as.matrix(vote_mat)
-  selected <- rowSums(vote_mat) > 0
+  selected <- if (rule == "candidate") candidate else rowSums(vote_mat) > 0
   for (nm in used) rd[[paste0("viral_vote_", nm)]] <- unname(vote_mat[, nm])
   rd$viral_vote_n <- as.integer(rowSums(vote_mat))
   rd$viral_vote_evidence <- vapply(seq_len(n), function(i) {
@@ -2044,18 +2057,26 @@ annotate_viral_votes <- function(tse,
   rd$viral_selected <- unname(selected)
   SummarizedExperiment::rowData(tse) <- rd
 
-  S4Vectors::metadata(tse)$viral_selection <- list(
-    rule = "vote",
-    combination = "OR (permissive union, not a consensus)",
-    votes_used = used,
-    votes_missing = missing_votes,
-    thresholds = list(genomad_min_score = genomad_min_score,
-                      checkv_levels = checkv_levels,
-                      virsorter2_groups = virsorter2_groups),
-    n_total = n,
-    n_selected = sum(selected),
-    n_by_vote = colSums(vote_mat),
-    decided_at = Sys.time()
+  S4Vectors::metadata(tse)$viral_selection <- c(
+    list(rule = rule),
+    if (rule == "candidate") {
+      list(candidate_col = candidate_col,
+           combination = "the pipeline's own putative viral contig list")
+    } else {
+      list(combination = "OR (permissive union, not a consensus)")
+    },
+    list(
+      votes_used = used,
+      votes_missing = missing_votes,
+      thresholds = list(genomad_min_score = genomad_min_score,
+                        checkv_levels = checkv_levels,
+                        virsorter2_groups = virsorter2_groups),
+      n_total = n,
+      n_selected = sum(selected),
+      n_by_vote = colSums(vote_mat),
+      n_union = sum(rowSums(vote_mat) > 0),
+      decided_at = Sys.time()
+    )
   )
   tse
 }
@@ -2071,17 +2092,40 @@ annotate_viral_votes <- function(tse,
 #' A TSE that has already been annotated keeps its existing `viral_selected`
 #' column unless `reannotate = TRUE`.
 #'
+#' The default is `rule = "candidate"`. An object built without
+#' `create_vpftse(fin_vircontigs = ...)` has no candidate list to use, and falls
+#' back to `rule = "vote"` with a warning — but only when the default was in
+#' effect. Asking for `rule = "candidate"` by name on such an object is an error,
+#' because silently deciding by a different rule than the one requested is how a
+#' viral set comes to be something other than what its caller believes it is.
+#'
 #' @param tse TSE object
-#' @param rule `"vote"` (default) or `"candidate"`
+#' @param rule `"candidate"` (default) or `"vote"`
 #' @param reannotate Recompute the votes even if the object already carries them
 #' @param ... Passed to [annotate_viral_votes()], e.g. `genomad_min_score`
 #' @return TreeSummarizedExperiment object
 #' @export
 #'
-create_vpftse_vir <- function(tse, rule = c("vote", "candidate"),
+create_vpftse_vir <- function(tse, rule = c("candidate", "vote"),
                               reannotate = FALSE, ...) {
+  rule_was_given <- !missing(rule)
   rule <- match.arg(rule)
   rd <- SummarizedExperiment::rowData(tse)
+
+  if (rule == "candidate" && !rule_was_given) {
+    dots <- list(...)
+    ccol <- if (!is.null(dots$candidate_col)) dots$candidate_col else "upstream_viral_candidate"
+    if (!ccol %in% colnames(rd)) {
+      warning("No '", ccol, "' column, so the viral set is decided by the ",
+              "detector votes instead of the pipeline's candidate list. That is ",
+              "a more permissive rule -- on two measured datasets the union kept ",
+              "62 % and 98.5 % of the library. Build the object with ",
+              "create_vpftse(fin_vircontigs = ...) to use the candidate list, or ",
+              "pass rule = \"vote\" to make this choice explicit.", call. = FALSE)
+      rule <- "vote"
+    }
+  }
+
   if (reannotate || !"viral_selected" %in% colnames(rd)) {
     tse <- annotate_viral_votes(tse, rule = rule, ...)
     rd <- SummarizedExperiment::rowData(tse)

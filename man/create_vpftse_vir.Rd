@@ -4,12 +4,12 @@
 \alias{create_vpftse_vir}
 \title{Create a TSE virome object}
 \usage{
-create_vpftse_vir(tse, rule = c("vote", "candidate"), reannotate = FALSE, ...)
+create_vpftse_vir(tse, rule = c("candidate", "vote"), reannotate = FALSE, ...)
 }
 \arguments{
 \item{tse}{TSE object}
 
-\item{rule}{`"vote"` (default) or `"candidate"`}
+\item{rule}{`"candidate"` (default) or `"vote"`}
 
 \item{reannotate}{Recompute the votes even if the object already carries them}
 
@@ -27,4 +27,11 @@ limitations.
 \details{
 A TSE that has already been annotated keeps its existing `viral_selected`
 column unless `reannotate = TRUE`.
+
+The default is `rule = "candidate"`. An object built without
+`create_vpftse(fin_vircontigs = ...)` has no candidate list to use, and falls
+back to `rule = "vote"` with a warning — but only when the default was in
+effect. Asking for `rule = "candidate"` by name on such an object is an error,
+because silently deciding by a different rule than the one requested is how a
+viral set comes to be something other than what its caller believes it is.
 }

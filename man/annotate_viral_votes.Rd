@@ -6,7 +6,7 @@
 \usage{
 annotate_viral_votes(
   tse,
-  rule = c("vote", "candidate"),
+  rule = c("candidate", "vote"),
   votes = names(.VPF_VOTES),
   genomad_min_score = 0.7,
   checkv_levels = c("Complete", "High-quality", "Medium-quality"),
@@ -17,8 +17,8 @@ annotate_viral_votes(
 \arguments{
 \item{tse}{A TSE built by [create_vpftse()]}
 
-\item{rule}{`"vote"` (default) for the OR of the votes below, or `"candidate"`
-for the pipeline's own putative viral contig list}
+\item{rule}{`"candidate"` (default) for the pipeline's own putative viral
+contig list, or `"vote"` for the OR of the votes below}
 
 \item{votes}{Names of the votes to evaluate. Defaults to all of `taxonomy`,
 `checkv`, `virsorter2`, `vibrant`, `dvf`, `genomad`.}
@@ -46,11 +46,18 @@ The rule, the thresholds and the votes that could not be evaluated are stored
 in `metadata(tse)$viral_selection`.
 }
 \details{
-Because votes are combined with OR, this is a permissive union chosen for
-sensitivity, not a consensus. It is also not a set of independent tests: in
-ViroProfiler, geNomad, CheckV and VIBRANT already determined which contigs
-entered the candidate set, VirSorter2 ran only on that candidate set, and the
-merged taxonomy was computed from it. `rule = "candidate"` uses the pipeline's
-own candidate list instead and is the more defensible criterion when
-`create_vpftse()` was given `fin_vircontigs`.
+`rule = "candidate"` is the default: it takes the viral set from the
+pipeline's own candidate list, which is what every stage downstream of
+`VIRCONTIGS_PRE` was actually computed on.
+
+`rule = "vote"` combines the votes with OR, giving a permissive union chosen
+for sensitivity rather than a consensus. It is also not a set of independent
+tests: geNomad, CheckV and VIBRANT already determined which contigs entered
+the candidate set, VirSorter2 ran only on that set, and the merged taxonomy
+was computed from it — so `viral_vote_n` counts views of one decision rather
+than independent confirmations of it. Measured on two datasets, the votes
+overlap pairwise at 0.79–0.87 (161 contigs) and 0.97 (16,934 contigs), and
+the union keeps 62 % and 98.5 % of those libraries respectively. The vote
+columns are still computed and stored under either rule, so
+`rowData$viral_vote_n` and `viral_vote_evidence` remain available.
 }
