@@ -33,7 +33,8 @@ test_that("report availability explains missing Quarto installations", {
     .vpf_quarto_hint = function() "Install Quarto to render reports."
   )
   testServer(mod_export_server, args = list(r_filter = vpf_exp_filter(NULL)), {
-    expect_match(output$report_availability, "Install Quarto to render reports")
+    expect_match(as.character(output$report_availability),
+                 "Install Quarto to render reports")
   })
 })
 
